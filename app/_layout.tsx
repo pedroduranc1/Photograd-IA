@@ -5,6 +5,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as React from 'react';
 import { Appearance, Platform, View } from 'react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NAV_THEME } from '~/src/constants/constants';
 import { useColorScheme } from '~/src/hooks/ui/useColorScheme';
 import { PortalHost } from '@rn-primitives/portal';
@@ -19,6 +20,8 @@ const DARK_THEME: Theme = {
   ...DarkTheme,
   colors: NAV_THEME.dark,
 };
+
+const queryClient = new QueryClient();
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -36,19 +39,21 @@ export default function RootLayout() {
   const { isDarkColorScheme } = useColorScheme();
 
   return (
-    <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-      <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
-      <Stack>
-        <Stack.Screen
-          name='index'
-          options={{
-            title: 'Starter Base',
-            headerRight: () => <ThemeToggle />,
-          }}
-        />
-      </Stack>
-      <PortalHost />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+        <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
+        <Stack>
+          <Stack.Screen
+            name='index'
+            options={{
+              title: 'Starter Base',
+              headerRight: () => <ThemeToggle />,
+            }}
+          />
+        </Stack>
+        <PortalHost />
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
