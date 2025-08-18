@@ -5,11 +5,11 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as React from 'react';
 import { Appearance, Platform, View } from 'react-native';
-import { NAV_THEME } from '~/lib/constants';
-import { useColorScheme } from '~/lib/useColorScheme';
+import { NAV_THEME } from '~/src/constants/constants';
+import { useColorScheme } from '~/src/hooks/ui/useColorScheme';
 import { PortalHost } from '@rn-primitives/portal';
-import { ThemeToggle } from '~/components/ThemeToggle';
-import { setAndroidNavigationBar } from '~/lib/android-navigation-bar';
+import { ThemeToggle } from '~/src/components/layout/ThemeToggle';
+import { setAndroidNavigationBar } from '~/src/utils/android-navigation-bar';
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
