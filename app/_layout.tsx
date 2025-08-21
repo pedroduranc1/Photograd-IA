@@ -1,15 +1,17 @@
-import '~/global.css';
+import '../global.css';
 
 import { DarkTheme, DefaultTheme, Theme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as React from 'react';
-import { Appearance, Platform, View } from 'react-native';
-import { NAV_THEME } from '~/src/constants/constants';
-import { useColorScheme } from '~/src/hooks/ui/useColorScheme';
+import { Appearance, Platform } from 'react-native';
+import { NAV_THEME } from '../src/constants/constants';
+import { useColorScheme } from '../src/hooks/ui/useColorScheme';
 import { PortalHost } from '@rn-primitives/portal';
-import { ThemeToggle } from '~/src/components/layout/ThemeToggle';
-import { setAndroidNavigationBar } from '~/src/utils/android-navigation-bar';
+import { ThemeToggle } from '../src/components/layout/ThemeToggle';
+import { setAndroidNavigationBar } from '../src/utils/android-navigation-bar';
+import { AuthProvider } from '../src/components/auth/AuthProvider';
+import { AuthGuard } from '../src/components/auth/AuthGuard';
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -36,19 +38,19 @@ export default function RootLayout() {
   const { isDarkColorScheme } = useColorScheme();
 
   return (
-    <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-      <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
-      <Stack>
-        <Stack.Screen
-          name='index'
-          options={{
-            title: 'Starter Base',
-            headerRight: () => <ThemeToggle />,
-          }}
-        />
-      </Stack>
-      <PortalHost />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+        <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
+        <AuthGuard>
+          <Stack>
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(protected)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </AuthGuard>
+        <PortalHost />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }
 
