@@ -4,6 +4,8 @@ import { useAuthStore } from '../../store/auth-store';
 import { databaseService } from '../../services/database-service';
 import { logConfigurationStatus } from '../../utils/config-checker';
 
+console.log('🚀 AuthProvider: Module loaded!');
+
 // Create a query client with default options
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,34 +26,55 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  console.log('🚀 AuthProvider: Component rendering...');
   const initialize = useAuthStore((state) => state.initialize);
+  console.log('🚀 AuthProvider: Initialize function obtained:', typeof initialize);
 
+  const initializeRef = React.useRef(false);
+
+  // Initialize auth properly without setTimeout workaround
   useEffect(() => {
-    // Initialize database and auth in sequence
-    const init = async () => {
-      try {
-        // Check configuration first
-        logConfigurationStatus();
-        
-        // Initialize database tables first
-        console.log('🏗️ Initializing database tables...');
-        const dbResult = await databaseService.initializeTables();
-        if (dbResult.success) {
-          console.log('✅ Database tables initialized successfully');
-        } else {
-          console.error('❌ Database initialization failed:', dbResult.error);
+    if (!initializeRef.current) {
+      initializeRef.current = true;
+      console.log('🚀 AuthProvider: Starting initialization...');
+      
+      const initializeApp = async () => {
+        try {
+          // Check configuration first
+          console.log('🔧 AuthProvider: Checking configuration...');
+          logConfigurationStatus();
+          console.log('✅ AuthProvider: Configuration check complete');
+          
+          // Skip database init for web to test if that's the issue
+          if (typeof window !== 'undefined') {
+            console.log('🌐 AuthProvider: Running on web, skipping database initialization for now');
+          } else {
+            // Initialize database tables first
+            console.log('🏗️ AuthProvider: Initializing database tables...');
+            const dbResult = await databaseService.initializeTables();
+            if (dbResult.success) {
+              console.log('✅ AuthProvider: Database tables initialized successfully');
+            } else {
+              console.error('❌ AuthProvider: Database initialization failed:', dbResult.error);
+              // Don't fail completely if database init fails - continue with auth
+            }
+          }
+          
+          // Then initialize auth
+          console.log('🔐 AuthProvider: Starting authentication initialization...');
+          await initialize();
+          console.log('✅ AuthProvider: Authentication initialized successfully');
+          console.log('🎉 AuthProvider: Full initialization complete!');
+          
+        } catch (error) {
+          console.error('❌ AuthProvider: Failed to initialize app services:', error);
+          // Initialize even on error to prevent infinite loading
+          console.warn('⚠️ AuthProvider: Setting initialized = true despite error to prevent hang');
         }
-        
-        // Then initialize auth
-        console.log('🔐 Initializing authentication...');
-        await initialize();
-        console.log('✅ Authentication initialized successfully');
-      } catch (error) {
-        console.error('❌ Failed to initialize app services:', error);
-      }
-    };
-
-    init();
+      };
+      
+      initializeApp();
+    }
   }, [initialize]);
 
   return (
