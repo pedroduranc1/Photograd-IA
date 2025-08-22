@@ -158,20 +158,27 @@ class AuthService {
   // Get current session
   async getSession() {
     try {
+      console.log('🔐 AuthService: Getting session...');
       const { data, error } = await this.supabase.auth.getSession();
+      
+      console.log('🔐 AuthService: Session result', { hasData: !!data, hasSession: !!data?.session, error: error?.message });
       
       // Handle the case where there's no session (new user or logged out)
       if (error) {
         // Only throw if it's a real error, not just missing session
         if (error.message !== "Auth session missing!") {
+          console.error('🔐 AuthService: Session error:', error);
           throw this.handleAuthError(error);
         }
         // For missing session, return null instead of throwing
+        console.log('🔐 AuthService: No session found (expected for new users)');
         return null;
       }
 
+      console.log('🔐 AuthService: Session retrieved successfully');
       return data.session;
     } catch (error) {
+      console.error('🔐 AuthService: Session fetch failed:', error);
       // Don't throw for missing session errors - return null instead
       const authError = this.handleAuthError(error);
       if (authError.message === "Auth session missing!") {
@@ -184,19 +191,26 @@ class AuthService {
   // Get current user
   async getUser() {
     try {
+      console.log('🔐 AuthService: Getting user...');
       const { data, error } = await this.supabase.auth.getUser();
+      
+      console.log('🔐 AuthService: User result', { hasData: !!data, hasUser: !!data?.user, error: error?.message });
       
       if (error) {
         // Only throw if it's a real error, not just missing session
         if (error.message !== "Auth session missing!") {
+          console.error('🔐 AuthService: User error:', error);
           throw this.handleAuthError(error);
         }
         // For missing session, return null instead of throwing
+        console.log('🔐 AuthService: No user found (expected for new users)');
         return null;
       }
 
+      console.log('🔐 AuthService: User retrieved successfully');
       return data.user;
     } catch (error) {
+      console.error('🔐 AuthService: User fetch failed:', error);
       // Don't throw for missing session errors - return null instead
       const authError = this.handleAuthError(error);
       if (authError.message === "Auth session missing!") {

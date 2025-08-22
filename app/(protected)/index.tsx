@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Button } from '../../src/components/ui/button';
 import { Text } from '../../src/components/ui/text';
@@ -25,12 +24,12 @@ export default function HomeScreen() {
     : authUser?.email?.split('@')[0] || 'User';
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <View className="flex-1 bg-background">
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="flex-1 px-6 py-8">
+        <View className="flex-1 px-6 pt-6">
           {/* Welcome Section */}
           <View className="mb-8">
             <Text className="text-2xl font-bold text-foreground mb-2">
@@ -77,7 +76,7 @@ export default function HomeScreen() {
             </Text>
             <View className="space-y-3">
               <Button
-                onPress={() => router.push('/(protected)/profile')}
+                onPress={() => router.push('/(protected)/perfil')}
                 variant="outline"
                 className="w-full"
               >
@@ -108,6 +107,6 @@ export default function HomeScreen() {
           </Card>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

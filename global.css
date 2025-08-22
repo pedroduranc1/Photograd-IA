@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    /* Custom Photograd-IA Light Theme */
-    --background: 216 33% 97%; /* #F5F7FA - Gris claro */
-    --foreground: 215 25% 27%; /* #1E293B - Negro azulado */
-    --card: 0 0% 100%; /* #FFFFFF - Blanco */
-    --card-foreground: 215 25% 27%; /* #1E293B - Negro azulado */
-    --popover: 0 0% 100%; /* #FFFFFF - Blanco */
-    --popover-foreground: 215 25% 27%; /* #1E293B - Negro azulado */
-    --primary: 207 52% 35%; /* #2A5B8C - Azul oscuro */
-    --primary-foreground: 0 0% 100%; /* #FFFFFF - Blanco */
-    --secondary: 207 46% 54%; /* #4D8BC8 - Azul claro */
-    --secondary-foreground: 0 0% 100%; /* #FFFFFF - Blanco */
-    --muted: 220 13% 91%; /* #E2E8F0 - Gris bordes */
-    --muted-foreground: 215 16% 47%; /* #64748B - Gris medio */
-    --accent: 354 70% 54%; /* #E63946 - Rojo coral */
-    --accent-foreground: 0 0% 100%; /* #FFFFFF - Blanco */
-    --destructive: 354 70% 54%; /* #E63946 - Rojo coral */
-    --destructive-foreground: 0 0% 100%; /* #FFFFFF - Blanco */
-    --border: 220 13% 91%; /* #E2E8F0 - Gris bordes */
-    --input: 220 13% 91%; /* #E2E8F0 - Gris bordes */
-    --ring: 207 52% 35%; /* #2A5B8C - Azul oscuro */
+    /* Minimalist Light Green Theme - Light Mode */
+    --background: 0 0% 99%; /* #FEFEFE - Pure white with subtle warmth */
+    --foreground: 215 25% 27%; /* #1E293B - Deep slate for high contrast */
+    --card: 210 20% 98%; /* #F8FAFC - Very light blue-gray surface */
+    --card-foreground: 215 25% 27%; /* #1E293B - Deep slate */
+    --popover: 0 0% 100%; /* #FFFFFF - Pure white */
+    --popover-foreground: 215 25% 27%; /* #1E293B - Deep slate */
+    --primary: 142 71% 45%; /* #22C55E - Fresh vibrant green */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF - White for contrast */
+    --secondary: 142 77% 73%; /* #86EFAC - Soft accent green */
+    --secondary-foreground: 142 76% 36%; /* #16A34A - Darker green for contrast */
+    --muted: 210 17% 96%; /* #F1F5F9 - Subtle borders and dividers */
+    --muted-foreground: 215 16% 47%; /* #64748B - Medium gray for secondary text */
+    --accent: 142 77% 73%; /* #86EFAC - Light green accent */
+    --accent-foreground: 142 76% 36%; /* #16A34A - Dark green for contrast */
+    --destructive: 0 84% 60%; /* #F87171 - Soft red for errors */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF - White */
+    --border: 210 17% 96%; /* #F1F5F9 - Subtle borders */
+    --input: 210 17% 96%; /* #F1F5F9 - Input background */
+    --ring: 142 71% 45%; /* #22C55E - Green focus ring */
   }
 
   .dark:root {
-    /* Custom Photograd-IA Dark Theme */
-    --background: 215 28% 17%; /* #1E293B - Negro azulado (más oscuro) */
-    --foreground: 0 0% 100%; /* #FFFFFF - Blanco */
-    --card: 215 25% 27%; /* #334155 - Gris azulado */
-    --card-foreground: 0 0% 100%; /* #FFFFFF - Blanco */
-    --popover: 215 25% 27%; /* #334155 - Gris azulado */
-    --popover-foreground: 0 0% 100%; /* #FFFFFF - Blanco */
-    --primary: 207 46% 54%; /* #4D8BC8 - Azul claro */
-    --primary-foreground: 215 28% 17%; /* #1E293B - Negro azulado */
-    --secondary: 207 52% 35%; /* #2A5B8C - Azul oscuro */
-    --secondary-foreground: 0 0% 100%; /* #FFFFFF - Blanco */
-    --muted: 215 20% 35%; /* #475569 - Gris medio oscuro */
-    --muted-foreground: 215 14% 71%; /* #CBD5E1 - Gris claro */
-    --accent: 354 70% 54%; /* #E63946 - Rojo coral */
-    --accent-foreground: 0 0% 100%; /* #FFFFFF - Blanco */
-    --destructive: 354 70% 54%; /* #E63946 - Rojo coral */
-    --destructive-foreground: 0 0% 100%; /* #FFFFFF - Blanco */
-    --border: 215 20% 35%; /* #475569 - Gris medio oscuro */
-    --input: 215 20% 35%; /* #475569 - Gris medio oscuro */
-    --ring: 207 46% 54%; /* #4D8BC8 - Azul claro */
+    /* Minimalist Light Green Theme - Dark Mode */
+    --background: 222 47% 11%; /* #0F172A - Deep slate blue */
+    --foreground: 0 0% 98%; /* #FAFAFA - Soft white */
+    --card: 215 28% 17%; /* #1E293B - Elevated surface */
+    --card-foreground: 0 0% 98%; /* #FAFAFA - Soft white */
+    --popover: 215 28% 17%; /* #1E293B - Elevated surface */
+    --popover-foreground: 0 0% 98%; /* #FAFAFA - Soft white */
+    --primary: 142 69% 58%; /* #4ADE80 - Brighter green for dark mode */
+    --primary-foreground: 222 47% 11%; /* #0F172A - Dark background for contrast */
+    --secondary: 142 69% 58%; /* #4ADE80 - Same as primary for consistency */
+    --secondary-foreground: 222 47% 11%; /* #0F172A - Dark for contrast */
+    --muted: 215 25% 27%; /* #334155 - Muted elements */
+    --muted-foreground: 215 14% 71%; /* #CBD5E1 - Light gray for secondary text */
+    --accent: 142 69% 58%; /* #4ADE80 - Green accent */
+    --accent-foreground: 222 47% 11%; /* #0F172A - Dark for contrast */
+    --destructive: 0 72% 51%; /* #DC2626 - Red for errors */
+    --destructive-foreground: 0 0% 98%; /* #FAFAFA - Light text */
+    --border: 215 25% 27%; /* #334155 - Subtle borders */
+    --input: 215 25% 27%; /* #334155 - Input background */
+    --ring: 142 69% 58%; /* #4ADE80 - Green focus ring */
   }
 }

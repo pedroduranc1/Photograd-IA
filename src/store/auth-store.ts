@@ -6,6 +6,19 @@ import { authService } from '../services/auth-service';
 import { databaseService } from '../services/database-service';
 import type { AuthState, AuthActions } from '../types/auth';
 
+// Web-compatible UUID generation
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for environments without crypto.randomUUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 // Create the auth store with subscribeWithSelector middleware for listening to changes
 export const useAuthStore = create<AuthState & AuthActions>()(
   subscribeWithSelector((set, get) => ({
@@ -26,7 +39,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         // If user is created and confirmed, create profile in Turso
         if (result.user && result.user.email_confirmed_at) {
           await databaseService.createUserProfile({
-            id: crypto.randomUUID(),
+            id: generateId(),
             userId: result.user.id,
             email: result.user.email!,
             firstName: credentials.firstName,
@@ -117,22 +130,43 @@ export const useAuthStore = create<AuthState & AuthActions>()(
     initialize: async () => {
       const { _isInitializing, isInitialized } = get();
       
+      console.log('🔐 AuthStore: Initialize called', { _isInitializing, isInitialized });
+      
       // Prevent multiple initialization attempts
       if (_isInitializing || isInitialized) {
+        console.log('🔐 AuthStore: Already initializing or initialized, skipping');
         return;
       }
 
       try {
+        console.log('🔐 AuthStore: Setting loading and initializing state...');
         set({ isLoading: true, _isInitializing: true });
         
         // Wait a small amount to ensure Supabase has time to initialize
+        console.log('🔐 AuthStore: Waiting for Supabase initialization...');
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // Get current session and user - these now handle missing sessions gracefully
-        const [session, user] = await Promise.all([
-          authService.getSession(),
-          authService.getUser()
-        ]);
+        console.log('🔐 AuthStore: Getting current session and user...');
+        
+        // Add timeout to prevent hanging
+        const timeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Auth initialization timeout')), 8000)
+        );
+        
+        const [session, user] = await Promise.race([
+          Promise.all([
+            authService.getSession(),
+            authService.getUser()
+          ]),
+          timeout
+        ]) as [any, any];
+
+        console.log('🔐 AuthStore: Session and user retrieved', { 
+          hasSession: !!session, 
+          hasUser: !!user,
+          userId: user?.id 
+        });
 
         set({ 
           user: user || null, 
@@ -140,6 +174,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           isInitialized: true 
         });
 
+        console.log('🔐 AuthStore: Setting up auth state change listener...');
         // Set up auth state change listener (only once)
         authService.onAuthStateChange(async (event, session) => {
           console.log('Auth state changed:', event, session?.user?.id);
@@ -153,7 +188,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
                 const profileResult = await databaseService.getUserProfile(session.user.id);
                 if (!profileResult.data && profileResult.success) {
                   await databaseService.createUserProfile({
-                    id: crypto.randomUUID(),
+                    id: generateId(),
                     userId: session.user.id,
                     email: session.user.email!,
                     firstName: session.user.user_metadata?.first_name,
@@ -172,12 +207,16 @@ export const useAuthStore = create<AuthState & AuthActions>()(
             set({ user: session.user, session });
           }
         });
+        
+        console.log('✅ AuthStore: Auth state change listener set up successfully');
       } catch (error) {
-        console.error('Failed to initialize auth:', error);
+        console.error('❌ AuthStore: Failed to initialize auth:', error);
         // Set initialized to true even on error to prevent infinite retry loops
         set({ isInitialized: true });
       } finally {
+        console.log('🔐 AuthStore: Finalizing initialization...');
         set({ isLoading: false, _isInitializing: false });
+        console.log('✅ AuthStore: Initialization complete!');
       }
     },
 
@@ -189,11 +228,27 @@ export const useAuthStore = create<AuthState & AuthActions>()(
 );
 
 // Selectors for easy access to specific state slices
-export const useAuthUser = () => useAuthStore((state) => state.user);
+export const useAuthUser = () => {
+  const user = useAuthStore((state) => state.user);
+  console.log('🔍 useAuthUser:', !!user);
+  return user;
+};
 export const useAuthSession = () => useAuthStore((state) => state.session);
-export const useAuthLoading = () => useAuthStore((state) => state.isLoading);
-export const useAuthInitialized = () => useAuthStore((state) => state.isInitialized);
-export const useIsAuthenticated = () => useAuthStore((state) => Boolean(state.user && state.session));
+export const useAuthLoading = () => {
+  const loading = useAuthStore((state) => state.isLoading);
+  console.log('🔍 useAuthLoading:', loading);
+  return loading;
+};
+export const useAuthInitialized = () => {
+  const initialized = useAuthStore((state) => state.isInitialized);
+  console.log('🔍 useAuthInitialized:', initialized);
+  return initialized;
+};
+export const useIsAuthenticated = () => {
+  const authenticated = useAuthStore((state) => Boolean(state.user && state.session));
+  console.log('🔍 useIsAuthenticated:', authenticated);
+  return authenticated;
+};
 
 // Auth actions selectors - Fixed to prevent getSnapshot infinite loop
 export const useAuthActions = () => {

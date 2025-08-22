@@ -28,6 +28,7 @@ class DatabaseService {
   // Initialize database tables (run this once)
   async initializeTables() {
     try {
+      console.log('🏗️ DatabaseService: Starting table initialization...');
       // Create users table for profile data
       await this.client.execute(`
         CREATE TABLE IF NOT EXISTS user_profiles (
@@ -97,8 +98,10 @@ class DatabaseService {
         CREATE INDEX IF NOT EXISTS idx_processing_jobs_photo_id ON processing_jobs(photo_id)
       `);
 
+      console.log('✅ DatabaseService: All tables and indexes created successfully');
       return { success: true, error: null };
     } catch (error) {
+      console.error('❌ DatabaseService: Table initialization failed:', error);
       return { success: false, error: this.handleDatabaseError(error) };
     }
   }

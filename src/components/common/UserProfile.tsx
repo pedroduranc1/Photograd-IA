@@ -82,7 +82,7 @@ export function UserProfile() {
 
   if (isLoading) {
     return (
-      <View className="p-4">
+      <View className="px-6">
         <Text className="text-muted-foreground">Loading profile...</Text>
       </View>
     );
@@ -90,7 +90,7 @@ export function UserProfile() {
 
   if (error) {
     return (
-      <View className="p-4 space-y-4">
+      <View className="px-6 space-y-4">
         <Text className="text-destructive text-lg font-semibold">Failed to load profile</Text>
         <View className="bg-destructive/10 p-3 rounded-lg">
           <Text className="text-sm text-destructive-foreground font-medium mb-2">Error Details:</Text>
@@ -122,7 +122,7 @@ export function UserProfile() {
   }
 
   return (
-    <View className="p-4 space-y-4">
+    <View className="px-6 space-y-4">
       <View className="space-y-2">
         <Text className="text-lg font-semibold text-foreground">Profile</Text>
         

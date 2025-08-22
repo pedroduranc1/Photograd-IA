@@ -197,7 +197,7 @@ export function SignUpForm({ onSuccess }: SignUpFormProps) {
       <Button
         onPress={handleSubmit(onSubmit)}
         disabled={isLoading}
-        className="w-full"
+        className="w-full mt-3"
       >
         <Text className="text-primary-foreground font-medium">
           {isLoading ? 'Creating Account...' : 'Create Account'}

@@ -93,6 +93,7 @@ export default function ProtectedLayout() {
         name="escuela"
         options={{
           href: null, // This hides it from the tab bar
+          headerShown: false, // Hide header from tabs, let Stack handle it
         }}
       />
     </Tabs>

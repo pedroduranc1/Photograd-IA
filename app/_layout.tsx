@@ -34,8 +34,11 @@ const usePlatformSpecificSetup = Platform.select({
 });
 
 export default function RootLayout() {
+  console.log('🏠 RootLayout: Rendering...');
   usePlatformSpecificSetup();
   const { isDarkColorScheme } = useColorScheme();
+
+  console.log('🏠 RootLayout: Setup complete, theme:', isDarkColorScheme ? 'dark' : 'light');
 
   return (
     <AuthProvider>
