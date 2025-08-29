@@ -28,8 +28,15 @@ export function validateEnvironmentVariables() {
   );
 
   if (missingVars.length > 0) {
-    throw new Error(
-      `Missing required environment variables: ${missingVars.join(', ')}`
-    );
+    const errorMessage = `Missing required environment variables: ${missingVars.join(', ')}`;
+    
+    // On web, log the error instead of throwing to prevent infinite hangs
+    if (typeof window !== 'undefined') {
+      console.error('❌ Configuration Error:', errorMessage);
+      console.warn('⚠️ App may not function correctly without proper environment variables');
+      return; // Don't throw on web - let the app continue with degraded functionality
+    }
+    
+    throw new Error(errorMessage);
   }
 }

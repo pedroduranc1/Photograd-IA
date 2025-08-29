@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, ScrollView } from 'react-native';
-import { UserProfile } from '../../src/components/common/UserProfile';
+import { UserProfile } from '~/src/components/common/UserProfile';
 
 export default function ProfileScreen() {
   return (

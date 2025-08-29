@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, ScrollView } from 'react-native';
-import { Button } from '../../src/components/ui/button';
-import { Text } from '../../src/components/ui/text';
-import { Card } from '../../src/components/ui/card';
+import { Button } from '~/src/components/ui/button';
+import { Text } from '~/src/components/ui/text';
+import { Card } from '~/src/components/ui/card';
 
 export default function PagosScreen() {
   return (

@@ -149,9 +149,10 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         // Get current session and user - these now handle missing sessions gracefully
         console.log('🔐 AuthStore: Getting current session and user...');
         
-        // Add timeout to prevent hanging
+        // Add platform-specific timeout to prevent hanging
+        const timeoutDuration = typeof window !== 'undefined' ? 5000 : 8000; // Shorter timeout for web
         const timeout = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Auth initialization timeout')), 8000)
+          setTimeout(() => reject(new Error('Auth initialization timeout')), timeoutDuration)
         );
         
         const [session, user] = await Promise.race([
@@ -168,11 +169,28 @@ export const useAuthStore = create<AuthState & AuthActions>()(
           userId: user?.id 
         });
 
-        set({ 
+        // Set state with explicit initialization flag
+        const newState = { 
           user: user || null, 
           session: session || null, 
           isInitialized: true 
-        });
+        };
+        
+        console.log('🔐 AuthStore: About to set state to:', newState);
+        set(newState);
+        
+        console.log('🔐 AuthStore: State set successfully. Current state check:', get());
+        
+        // Force manual check for web compatibility
+        if (typeof window !== 'undefined') {
+          setTimeout(() => {
+            const currentState = get();
+            console.log('🔐 AuthStore: Web state verification after timeout:', {
+              isInitialized: currentState.isInitialized,
+              isLoading: currentState.isLoading
+            });
+          }, 100);
+        }
 
         console.log('🔐 AuthStore: Setting up auth state change listener...');
         // Set up auth state change listener (only once)
@@ -211,12 +229,34 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         console.log('✅ AuthStore: Auth state change listener set up successfully');
       } catch (error) {
         console.error('❌ AuthStore: Failed to initialize auth:', error);
-        // Set initialized to true even on error to prevent infinite retry loops
-        set({ isInitialized: true });
+        
+        // Different handling based on platform
+        if (typeof window !== 'undefined') {
+          console.warn('🌐 AuthStore: Web initialization failed, continuing with empty state');
+          set({ user: null, session: null, isInitialized: true });
+        } else {
+          console.error('📱 AuthStore: Native initialization failed, setting initialized anyway to prevent hang');
+          set({ isInitialized: true });
+        }
       } finally {
         console.log('🔐 AuthStore: Finalizing initialization...');
-        set({ isLoading: false, _isInitializing: false });
-        console.log('✅ AuthStore: Initialization complete!');
+        
+        // Ensure state update happens properly, especially on web
+        const finalState = { isLoading: false, _isInitializing: false };
+        set(finalState);
+        
+        // For web compatibility, force a small delay to ensure React re-renders
+        if (typeof window !== 'undefined') {
+          setTimeout(() => {
+            const currentState = get();
+            if (!currentState.isInitialized) {
+              console.warn('🌐 AuthStore: Web fallback - forcing initialized state');
+              set({ isInitialized: true });
+            }
+          }, 100);
+        }
+        
+        console.log('✅ AuthStore: Initialization complete!', finalState);
       }
     },
 
@@ -236,17 +276,27 @@ export const useAuthUser = () => {
 export const useAuthSession = () => useAuthStore((state) => state.session);
 export const useAuthLoading = () => {
   const loading = useAuthStore((state) => state.isLoading);
-  console.log('🔍 useAuthLoading:', loading);
+  const _isInitializing = useAuthStore((state) => state._isInitializing);
+  console.log('🔍 useAuthLoading:', { loading, _isInitializing });
   return loading;
 };
 export const useAuthInitialized = () => {
-  const initialized = useAuthStore((state) => state.isInitialized);
-  console.log('🔍 useAuthInitialized:', initialized);
-  return initialized;
+  const state = useAuthStore((state) => ({ 
+    isInitialized: state.isInitialized, 
+    _isInitializing: state._isInitializing,
+    isLoading: state.isLoading
+  }));
+  console.log('🔍 useAuthInitialized:', state);
+  return state.isInitialized;
 };
 export const useIsAuthenticated = () => {
-  const authenticated = useAuthStore((state) => Boolean(state.user && state.session));
-  console.log('🔍 useIsAuthenticated:', authenticated);
+  const state = useAuthStore((state) => ({ 
+    user: state.user, 
+    session: state.session,
+    isInitialized: state.isInitialized 
+  }));
+  const authenticated = Boolean(state.user && state.session);
+  console.log('🔍 useIsAuthenticated:', { ...state, authenticated });
   return authenticated;
 };
 

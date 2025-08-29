@@ -1,12 +1,12 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
-import { ThemeToggle } from '../../src/components/layout/ThemeToggle';
-import { Home } from '../../src/components/ui/icons/Home';
-import { GraduationCap } from '../../src/components/ui/icons/GraduationCap';
-import { CreditCard } from '../../src/components/ui/icons/CreditCard';
-import { User } from '../../src/components/ui/icons/User';
-import { useColorScheme } from '../../src/hooks/ui/useColorScheme';
+import { ThemeToggle } from '~/src/components/layout/ThemeToggle';
+import { Home } from '~/src/components/ui/icons/Home';
+import { GraduationCap } from '~/src/components/ui/icons/GraduationCap';
+import { CreditCard } from '~/src/components/ui/icons/CreditCard';
+import { User } from '~/src/components/ui/icons/User';
+import { useColorScheme } from '~/src/hooks/ui/useColorScheme';
 
 export default function ProtectedLayout() {
   const { isDarkColorScheme } = useColorScheme();
@@ -88,12 +88,26 @@ export default function ProtectedLayout() {
           ),
         }}
       />
-      {/* Hide the escuela detail stack from tabs */}
+      {/* Hide the nested school routes from tabs */}
       <Tabs.Screen
-        name="escuela"
+        name="escuelas/[schoolId]"
         options={{
           href: null, // This hides it from the tab bar
           headerShown: false, // Hide header from tabs, let Stack handle it
+        }}
+      />
+      <Tabs.Screen
+        name="escuelas/[schoolId]/grados/[gradeId]"
+        options={{
+          href: null,
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name="escuelas/[schoolId]/grados/[gradeId]/estudiante/[studentId]"
+        options={{
+          href: null,
+          headerShown: false,
         }}
       />
     </Tabs>

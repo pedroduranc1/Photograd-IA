@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Button } from '../../src/components/ui/button';
-import { Text } from '../../src/components/ui/text';
-import { Card } from '../../src/components/ui/card';
-import { useAuthUser } from '../../src/store/auth-store';
-import { useUserProfile } from '../../src/hooks/data/use-user-profile';
+import { Button } from '~/src/components/ui/button';
+import { Text } from '~/src/components/ui/text';
+import { Card } from '~/src/components/ui/card';
+import { useAuthUser } from '~/src/store/auth-store';
+import { useUserProfile } from '~/src/hooks/data/use-user-profile';
 
 export default function HomeScreen() {
   const router = useRouter();

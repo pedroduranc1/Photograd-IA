@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SignInForm } from '../../src/components/forms/SignInForm';
-import { Text } from '../../src/components/ui/text';
-import { Card } from '../../src/components/ui/card';
+import { SignInForm } from '~/src/components/forms/SignInForm';
+import { Text } from '~/src/components/ui/text';
+import { Card } from '~/src/components/ui/card';
 
 export default function SignInScreen() {
   return (

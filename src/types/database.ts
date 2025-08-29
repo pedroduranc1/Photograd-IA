@@ -85,3 +85,162 @@ export interface ProcessingJobFilters {
   type?: ProcessingJob['type'];
   status?: ProcessingJob['status'];
 }
+
+// School Management System Types
+
+export interface School {
+  id: string;
+  userId: string;
+  name: string;
+  address: string;
+  phone?: string;
+  email?: string;
+  status: 'active' | 'inactive';
+  debtAmount: number;
+  nextGraduation?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Computed fields (not in database)
+  studentCount?: number;
+  gradeCount?: number;
+  location?: string; // Derived from address
+}
+
+export interface Grade {
+  id: string;
+  schoolId: string;
+  name: string;
+  level: string;
+  academicYear: string;
+  createdAt: string;
+  updatedAt: string;
+  // Computed fields
+  studentCount?: number;
+}
+
+export interface Student {
+  id: string;
+  schoolId: string;
+  gradeId: string;
+  firstName: string;
+  lastName: string;
+  studentId: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  birthDate?: string;
+  gender?: 'male' | 'female' | 'other';
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  status: 'active' | 'inactive' | 'graduated';
+  enrollmentDate: string;
+  graduationDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Computed fields
+  fullName?: string;
+  age?: number;
+  photoCount?: number;
+  paymentCount?: number;
+  totalDebt?: number;
+  // Relations
+  school?: School;
+  grade?: Grade;
+}
+
+export interface StudentPhoto {
+  id: string;
+  studentId: string;
+  photoUrl: string;
+  photoType: 'profile' | 'graduation' | 'event' | 'id_card' | 'other';
+  takenDate: string;
+  metadata?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+  // Relations
+  student?: Student;
+}
+
+export interface Payment {
+  id: string;
+  studentId: string;
+  amount: number;
+  paymentType: 'tuition' | 'registration' | 'materials' | 'events' | 'other';
+  paymentMethod: 'cash' | 'card' | 'transfer' | 'check';
+  paymentDate: string;
+  dueDate?: string;
+  status: 'pending' | 'paid' | 'overdue' | 'cancelled';
+  description?: string;
+  referenceNumber?: string;
+  createdAt: string;
+  updatedAt: string;
+  // Relations
+  student?: Student;
+}
+
+// School Management Filters
+export interface SchoolFilters {
+  userId?: string;
+  status?: School['status'];
+  search?: string; // For name, address search
+}
+
+export interface GradeFilters {
+  schoolId?: string;
+  level?: string;
+  academicYear?: string;
+  search?: string; // For name search
+}
+
+export interface StudentFilters {
+  schoolId?: string;
+  gradeId?: string;
+  status?: Student['status'];
+  search?: string; // For name, student ID search
+  gender?: Student['gender'];
+  enrollmentYear?: string;
+}
+
+export interface PaymentFilters {
+  studentId?: string;
+  schoolId?: string;
+  gradeId?: string;
+  paymentType?: Payment['paymentType'];
+  status?: Payment['status'];
+  paymentMethod?: Payment['paymentMethod'];
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface StudentPhotoFilters {
+  studentId?: string;
+  photoType?: StudentPhoto['photoType'];
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+// Extended result types with statistics
+export interface SchoolWithStats extends School {
+  studentCount: number;
+  gradeCount: number;
+  totalDebt: number;
+  activeStudents: number;
+}
+
+export interface GradeWithStats extends Grade {
+  studentCount: number;
+  activeStudents: number;
+}
+
+export interface StudentWithDetails extends Student {
+  fullName: string;
+  age?: number;
+  photoCount: number;
+  paymentCount: number;
+  totalDebt: number;
+  school: School;
+  grade: Grade;
+  recentPhotos?: StudentPhoto[];
+  recentPayments?: Payment[];
+}

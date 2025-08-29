@@ -26,56 +26,131 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  console.log('🚀 AuthProvider: Component rendering...');
   const initialize = useAuthStore((state) => state.initialize);
-  console.log('🚀 AuthProvider: Initialize function obtained:', typeof initialize);
 
   const initializeRef = React.useRef(false);
+  const hasTriggeredInit = React.useRef(false);
 
-  // Initialize auth properly without setTimeout workaround
+  // Immediately trigger initialization if not already done
+  if (!hasTriggeredInit.current) {
+    hasTriggeredInit.current = true;
+    
+    // Use setTimeout to allow the component to fully render first
+    setTimeout(() => {
+      if (!initializeRef.current) {
+        initializeRef.current = true;
+        
+        const initializeApp = async () => {
+          try {
+            // Check configuration first
+            logConfigurationStatus();
+            
+            // Initialize database tables with web-safe timeout
+            if (typeof window !== 'undefined') {
+              try {
+                // Add timeout for web to prevent hanging
+                const dbInitPromise = databaseService.initializeTables();
+                const timeoutPromise = new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Database initialization timeout')), 5000)
+                );
+                
+                const dbResult = await Promise.race([dbInitPromise, timeoutPromise]) as any;
+                if (!dbResult || !dbResult.success) {
+                  console.warn('⚠️ AuthProvider: Database initialization failed or timed out on web');
+                }
+              } catch (error) {
+                console.warn('⚠️ AuthProvider: Database initialization failed on web:', error);
+                // Continue with auth initialization even if database fails
+              }
+            } else {
+              // Native platform - initialize database normally
+              const dbResult = await databaseService.initializeTables();
+              if (!dbResult.success) {
+                console.error('❌ AuthProvider: Database initialization failed:', dbResult.error);
+                // Don't fail completely if database init fails - continue with auth
+              }
+            }
+            
+            // Then initialize auth
+            await initialize();
+            
+          } catch (error) {
+            console.error('❌ AuthProvider: Failed to initialize app services:', error);
+          }
+        };
+        
+        initializeApp();
+      }
+    }, 100); // Small delay to ensure component is mounted
+  }
+
+  // Backup useEffect as fallback
   useEffect(() => {
     if (!initializeRef.current) {
       initializeRef.current = true;
-      console.log('🚀 AuthProvider: Starting initialization...');
+      
+      // Emergency fallback timer for web - forces initialization to complete after 8 seconds
+      let emergencyFallback: NodeJS.Timeout | null = null;
+      if (typeof window !== 'undefined') {
+        emergencyFallback = setTimeout(() => {
+          initialize().catch((error) => {
+            console.error('Emergency initialization failed:', error);
+          });
+        }, 8000);
+      }
       
       const initializeApp = async () => {
         try {
           // Check configuration first
-          console.log('🔧 AuthProvider: Checking configuration...');
           logConfigurationStatus();
-          console.log('✅ AuthProvider: Configuration check complete');
           
-          // Skip database init for web to test if that's the issue
+          // Initialize database tables with web-safe timeout
           if (typeof window !== 'undefined') {
-            console.log('🌐 AuthProvider: Running on web, skipping database initialization for now');
+            try {
+              // Add timeout for web to prevent hanging
+              const dbInitPromise = databaseService.initializeTables();
+              const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Database initialization timeout')), 5000)
+              );
+              
+              const dbResult = await Promise.race([dbInitPromise, timeoutPromise]) as any;
+              if (!dbResult || !dbResult.success) {
+                console.warn('⚠️ AuthProvider: Database initialization failed or timed out on web');
+              }
+            } catch (error) {
+              console.warn('⚠️ AuthProvider: Database initialization failed on web:', error);
+              // Continue with auth initialization even if database fails
+            }
           } else {
-            // Initialize database tables first
-            console.log('🏗️ AuthProvider: Initializing database tables...');
+            // Native platform - initialize database normally
             const dbResult = await databaseService.initializeTables();
-            if (dbResult.success) {
-              console.log('✅ AuthProvider: Database tables initialized successfully');
-            } else {
+            if (!dbResult.success) {
               console.error('❌ AuthProvider: Database initialization failed:', dbResult.error);
               // Don't fail completely if database init fails - continue with auth
             }
           }
           
           // Then initialize auth
-          console.log('🔐 AuthProvider: Starting authentication initialization...');
           await initialize();
-          console.log('✅ AuthProvider: Authentication initialized successfully');
-          console.log('🎉 AuthProvider: Full initialization complete!');
+          
+          // Clear emergency fallback if initialization completed successfully
+          if (emergencyFallback) {
+            clearTimeout(emergencyFallback);
+          }
           
         } catch (error) {
           console.error('❌ AuthProvider: Failed to initialize app services:', error);
-          // Initialize even on error to prevent infinite loading
-          console.warn('⚠️ AuthProvider: Setting initialized = true despite error to prevent hang');
+          
+          // Clear emergency fallback since we're handling the error
+          if (emergencyFallback) {
+            clearTimeout(emergencyFallback);
+          }
         }
       };
       
       initializeApp();
     }
-  }, [initialize]);
+  }, []); // Empty dependency array to run only once
 
   return (
     <QueryClientProvider client={queryClient}>

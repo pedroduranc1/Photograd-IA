@@ -5,81 +5,49 @@ import {
   Alert,
   Linking,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Text } from '../../src/components/ui/text';
-import { Button } from '../../src/components/ui/button';
-import { SearchInput } from '../../src/components/ui/search-input';
-import { SchoolCard, type School } from '../../src/components/ui/school-card';
-import { Fab } from '../../src/components/ui/fab';
-import { SchoolModal } from '../../src/components/ui/school-modal';
-import { useColorScheme } from '../../src/hooks/ui/useColorScheme';
-
-// Mock data - replace with actual data source
-const mockSchools: School[] = [
-  {
-    id: '1',
-    name: 'Universidad Nacional',
-    location: 'Ciudad de México, CDMX',
-    address: 'Av. Universidad 3000, Coyoacán, CDMX',
-    studentCount: 1200,
-    nextGraduation: '15 de Julio, 2025',
-    status: 'active',
-    phone: '(55) 5622-0000',
-    email: 'contacto@unam.mx',
-    debtAmount: 0,
-    grades: ['Licenciatura', 'Maestría', 'Doctorado'],
-  },
-  {
-    id: '2',
-    name: 'Instituto Tecnológico',
-    location: 'Guadalajara, Jalisco',
-    address: 'Av. Tecnológico 1500, Guadalajara, JAL',
-    studentCount: 800,
-    nextGraduation: '22 de Julio, 2025',
-    status: 'active',
-    phone: '(33) 3669-3000',
-    email: 'info@itgdl.edu.mx',
-    debtAmount: 15000,
-    grades: ['Ingeniería', 'Tecnología', 'Innovación'],
-  },
-  {
-    id: '3',
-    name: 'Colegio San Patricio',
-    location: 'Monterrey, Nuevo León',
-    address: 'Calle Educación 456, San Pedro, NL',
-    studentCount: 450,
-    nextGraduation: '29 de Julio, 2025',
-    status: 'active',
-    phone: '(81) 8358-2000',
-    email: 'admisiones@sanpatricio.edu.mx',
-    debtAmount: 0,
-    grades: ['Primaria', 'Secundaria', 'Preparatoria'],
-  },
-  {
-    id: '4',
-    name: 'Universidad del Valle',
-    location: 'Puebla, Puebla',
-    address: 'Blvd. Forjadores 1234, Puebla, PUE',
-    studentCount: 650,
-    nextGraduation: '12 de Agosto, 2025',
-    status: 'inactive',
-    phone: '(222) 229-5500',
-    email: 'contacto@udv.edu.mx',
-    debtAmount: 25000,
-    grades: ['Licenciatura', 'Posgrado'],
-  },
-];
+import { Text } from '~/src/components/ui/text';
+import { Button } from '~/src/components/ui/button';
+import { SearchInput } from '~/src/components/ui/search-input';
+import { SchoolCard, type School } from '~/src/components/ui/school-card';
+import { Fab } from '~/src/components/ui/fab';
+import { SchoolModal } from '~/src/components/ui/school-modal';
+import { useColorScheme } from '~/src/hooks/ui/useColorScheme';
+import { 
+  useUserSchools, 
+  useCreateSchool, 
+  useUpdateSchool, 
+  useDeleteSchool 
+} from '~/src/hooks/data/use-school-queries';
+import { useAuthStore } from '~/src/store/auth-store';
+import type { SchoolWithStats } from '~/src/types/database';
 
 export default function EscuelasScreen() {
   const { isDarkColorScheme } = useColorScheme();
   const router = useRouter();
-  const [schools, setSchools] = useState<School[]>(mockSchools);
+  const { user } = useAuthStore();
+  
+  // State
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
+  const [selectedSchool, setSelectedSchool] = useState<SchoolWithStats | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
-  const [refreshing, setRefreshing] = useState(false);
+
+  // Queries and mutations
+  const { 
+    data: schoolsData, 
+    isLoading, 
+    error, 
+    refetch 
+  } = useUserSchools(user?.id || '', { limit: 50 });
+  
+  const createSchoolMutation = useCreateSchool();
+  const updateSchoolMutation = useUpdateSchool();
+  const deleteSchoolMutation = useDeleteSchool();
+
+  const schools = schoolsData?.data || [];
 
   // Filtered schools based on search
   const filteredSchools = useMemo(() => {
@@ -89,18 +57,17 @@ export default function EscuelasScreen() {
     return schools.filter(
       (school) =>
         school.name.toLowerCase().includes(query) ||
-        school.location.toLowerCase().includes(query) ||
-        school.grades.some((grade) => grade.toLowerCase().includes(query))
+        school.address.toLowerCase().includes(query)
     );
   }, [schools, searchQuery]);
 
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    try {
+      await refetch();
+    } catch (error) {
+      console.error('Error refreshing schools:', error);
+    }
   };
 
   const handleAddSchool = () => {
@@ -109,13 +76,13 @@ export default function EscuelasScreen() {
     setModalVisible(true);
   };
 
-  const handleEditSchool = (school: School) => {
+  const handleEditSchool = (school: SchoolWithStats) => {
     setModalMode('edit');
     setSelectedSchool(school);
     setModalVisible(true);
   };
 
-  const handleDeleteSchool = (school: School) => {
+  const handleDeleteSchool = (school: SchoolWithStats) => {
     Alert.alert(
       'Eliminar Escuela',
       `¿Estás seguro de que quieres eliminar "${school.name}"? Esta acción no se puede deshacer.`,
@@ -124,50 +91,65 @@ export default function EscuelasScreen() {
         {
           text: 'Eliminar',
           style: 'destructive',
-          onPress: () => {
-            setSchools((prev) => prev.filter((s) => s.id !== school.id));
-            Alert.alert('Éxito', 'Escuela eliminada correctamente');
+          onPress: async () => {
+            try {
+              await deleteSchoolMutation.mutateAsync(school.id);
+              Alert.alert('Éxito', 'Escuela eliminada correctamente');
+            } catch (error) {
+              Alert.alert('Error', 'No se pudo eliminar la escuela');
+              console.error('Error deleting school:', error);
+            }
           },
         },
       ]
     );
   };
 
-  const handleSaveSchool = (schoolData: Partial<School>) => {
-    if (modalMode === 'add') {
-      const newSchool: School = {
-        ...schoolData,
-        id: Date.now().toString(),
-        status: 'active',
-        studentCount: schoolData.studentCount || 0,
-        grades: schoolData.grades || [],
-        debtAmount: 0,
-      } as School;
+  const handleSaveSchool = async (schoolData: Partial<SchoolWithStats>) => {
+    if (!user?.id) {
+      Alert.alert('Error', 'Usuario no autenticado');
+      return;
+    }
+
+    try {
+      if (modalMode === 'add') {
+        const newSchool = {
+          ...schoolData,
+          id: `school_${Date.now()}`,
+          userId: user.id,
+          status: 'active' as const,
+          debtAmount: 0,
+        };
+        
+        await createSchoolMutation.mutateAsync(newSchool as any);
+        Alert.alert('Éxito', 'Escuela agregada correctamente');
+      } else if (selectedSchool) {
+        await updateSchoolMutation.mutateAsync({
+          id: selectedSchool.id,
+          updates: schoolData,
+        });
+        Alert.alert('Éxito', 'Escuela actualizada correctamente');
+      }
       
-      setSchools((prev) => [newSchool, ...prev]);
-      Alert.alert('Éxito', 'Escuela agregada correctamente');
-    } else {
-      setSchools((prev) =>
-        prev.map((school) =>
-          school.id === schoolData.id ? { ...school, ...schoolData } : school
-        )
-      );
-      
-      Alert.alert('Éxito', 'Escuela actualizada correctamente');
+      setModalVisible(false);
+      setSelectedSchool(null);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo guardar la escuela');
+      console.error('Error saving school:', error);
     }
   };
 
-  const handleSchoolPress = (school: School) => {
-    router.push(`/(protected)/escuela/${school.id}`);
+  const handleSchoolPress = (school: SchoolWithStats) => {
+    router.push(`/(protected)/escuelas/${school.id}`);
   };
 
-  const handleCall = (school: School) => {
+  const handleCall = (school: SchoolWithStats) => {
     if (school.phone) {
       Linking.openURL(`tel:${school.phone}`);
     }
   };
 
-  const handleEmail = (school: School) => {
+  const handleEmail = (school: SchoolWithStats) => {
     if (school.email) {
       Linking.openURL(`mailto:${school.email}`);
     }
@@ -196,9 +178,13 @@ export default function EscuelasScreen() {
     </View>
   );
 
-  const renderSchoolItem = ({ item }: { item: School }) => (
+  const renderSchoolItem = ({ item }: { item: SchoolWithStats }) => (
     <SchoolCard
-      school={item}
+      school={{
+        ...item,
+        location: item.address, // Map address to location for compatibility
+        grades: [], // Legacy field, not used in new system
+      }}
       onPress={() => handleSchoolPress(item)}
       onEdit={() => handleEditSchool(item)}
       onDelete={() => handleDeleteSchool(item)}
@@ -206,6 +192,38 @@ export default function EscuelasScreen() {
       onEmail={() => handleEmail(item)}
     />
   );
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <View className="flex-1 bg-background pt-6 justify-center items-center">
+        <ActivityIndicator 
+          size="large" 
+          color={isDarkColorScheme ? '#22C55E' : '#16A34A'} 
+        />
+        <Text className="text-muted-foreground mt-4">
+          Cargando escuelas...
+        </Text>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <View className="flex-1 bg-background pt-6 justify-center items-center px-6">
+        <Text className="text-xl font-semibold text-foreground mb-2 text-center">
+          Error al cargar escuelas
+        </Text>
+        <Text className="text-muted-foreground text-center mb-6">
+          {error.message || 'Ha ocurrido un error inesperado'}
+        </Text>
+        <Button onPress={handleRefresh}>
+          <Text className="text-primary-foreground">Reintentar</Text>
+        </Button>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-background pt-6">
@@ -223,7 +241,7 @@ export default function EscuelasScreen() {
         <SearchInput
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Buscar por nombre, ubicación o nivel..."
+          placeholder="Buscar por nombre o dirección..."
         />
       </View>
 
@@ -241,7 +259,7 @@ export default function EscuelasScreen() {
         ListEmptyComponent={renderEmptyState}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={isLoading}
             onRefresh={handleRefresh}
             tintColor={isDarkColorScheme ? '#22C55E' : '#16A34A'}
           />
@@ -253,15 +271,22 @@ export default function EscuelasScreen() {
       />
 
       {/* Floating Action Button */}
-      <Fab onPress={handleAddSchool} />
+      <Fab 
+        onPress={handleAddSchool}
+        disabled={createSchoolMutation.isPending}
+      />
 
       {/* Add/Edit Modal */}
       <SchoolModal
         visible={modalVisible}
-        onClose={() => setModalVisible(false)}
+        onClose={() => {
+          setModalVisible(false);
+          setSelectedSchool(null);
+        }}
         onSave={handleSaveSchool}
         school={selectedSchool}
         mode={modalMode}
+        loading={createSchoolMutation.isPending || updateSchoolMutation.isPending}
       />
     </View>
   );

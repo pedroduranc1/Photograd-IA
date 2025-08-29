@@ -23,17 +23,35 @@ class AuthService {
 
   constructor() {
     // Validate environment variables on initialization
-    validateEnvironmentVariables();
+    try {
+      validateEnvironmentVariables();
+    } catch (error) {
+      console.error('❌ AuthService: Environment validation failed:', error);
+      // On web, continue with degraded functionality
+      if (typeof window === 'undefined') {
+        throw error; // Re-throw on native platforms
+      }
+    }
 
-    // Initialize Supabase client with secure storage for native platforms
-    this.supabase = createClient(config.supabase.url, config.supabase.anonKey, {
-      auth: {
-        storage: Platform.OS !== 'web' ? ExpoSecureStoreAdapter : undefined,
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-      },
-    });
+    // Initialize Supabase client with web-safe configuration
+    try {
+      this.supabase = createClient(
+        config.supabase.url || 'https://placeholder.supabase.co', 
+        config.supabase.anonKey || 'placeholder-key', 
+        {
+          auth: {
+            storage: Platform.OS !== 'web' ? ExpoSecureStoreAdapter : undefined,
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: Platform.OS === 'web', // Enable URL detection on web
+          },
+        }
+      );
+    } catch (error) {
+      console.error('❌ AuthService: Failed to initialize Supabase client:', error);
+      // Create a minimal fallback client to prevent crashes
+      this.supabase = createClient('https://placeholder.supabase.co', 'placeholder-key');
+    }
   }
 
   // Get the Supabase client instance
