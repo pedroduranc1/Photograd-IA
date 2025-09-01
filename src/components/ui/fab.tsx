@@ -8,9 +8,10 @@ interface FabProps {
   onPress: () => void;
   className?: string;
   size?: 'default' | 'small' | 'large';
+  disabled?: boolean;
 }
 
-export function Fab({ onPress, className, size = 'default' }: FabProps) {
+export function Fab({ onPress, className, size = 'default', disabled = false }: FabProps) {
   const { isDarkColorScheme } = useColorScheme();
 
   const getSizeStyles = () => {
@@ -37,24 +38,28 @@ export function Fab({ onPress, className, size = 'default' }: FabProps) {
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={disabled ? undefined : onPress}
+      disabled={disabled}
       style={[
         styles.fab,
         {
-          backgroundColor: isDarkColorScheme ? '#22C55E' : '#16A34A',
+          backgroundColor: disabled 
+            ? (isDarkColorScheme ? '#64748B' : '#94A3B8')
+            : (isDarkColorScheme ? '#22C55E' : '#16A34A'),
           shadowColor: '#000',
           shadowOffset: {
             width: 0,
             height: 4,
           },
-          shadowOpacity: 0.3,
+          shadowOpacity: disabled ? 0.1 : 0.3,
           shadowRadius: 8,
-          elevation: 8,
+          elevation: disabled ? 4 : 8,
         }
       ]}
       className={cn(
         'absolute bottom-20 right-4 rounded-full items-center justify-center',
         getSizeStyles(),
+        disabled && 'opacity-50',
         className
       )}
       accessibilityLabel="Agregar nueva escuela"

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useAuthStore } from '../../store/auth-store';
+import { useInitializeAuth } from '../../store/auth-store';
 import { databaseService } from '../../services/database-service';
 import { logConfigurationStatus } from '../../utils/config-checker';
 
@@ -26,7 +26,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const initialize = useAuthStore((state) => state.initialize);
+  const initialize = useInitializeAuth();
 
   const initializeRef = React.useRef(false);
   const hasTriggeredInit = React.useRef(false);

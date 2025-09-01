@@ -1,83 +1,20 @@
 import React, { useState } from 'react';
-import { View, FlatList, Alert, RefreshControl } from 'react-native';
+import { View, FlatList, Alert, RefreshControl, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '~/src/components/ui/text';
 import { Button } from '~/src/components/ui/button';
 import { SearchInput } from '~/src/components/ui/search-input';
 import { StudentCard } from '~/src/components/ui/student-card';
 import { Fab } from '~/src/components/ui/fab';
+import { BreadcrumbNavigation } from '~/src/components/ui/breadcrumb-navigation';
+import { CreateStudentModal } from '~/src/components/ui/create-student-modal';
 import { useColorScheme } from '~/src/hooks/ui/useColorScheme';
+import { useGrade } from '~/src/hooks/data/use-grade-queries';
+import { useSchool } from '~/src/hooks/data/use-school-queries';
+import { useGradeStudents, useCreateStudent } from '~/src/hooks/data/use-student-queries';
+import type { StudentWithDetails } from '~/src/types/database';
 
-// Mock data - will be replaced with actual data hooks
-const mockStudents = [
-  {
-    id: '1',
-    schoolId: '1',
-    gradeId: '1',
-    firstName: 'María',
-    lastName: 'García López',
-    studentId: 'EST001',
-    email: 'maria.garcia@email.com',
-    phone: '(55) 1234-5678',
-    status: 'active' as const,
-    enrollmentDate: '2024-09-01',
-    fullName: 'María García López',
-    photoCount: 5,
-    paymentCount: 3,
-    totalDebt: 0,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: '2',
-    schoolId: '1',
-    gradeId: '1',
-    firstName: 'Carlos',
-    lastName: 'Rodríguez Martín',
-    studentId: 'EST002',
-    email: 'carlos.rodriguez@email.com',
-    phone: '(55) 2345-6789',
-    status: 'active' as const,
-    enrollmentDate: '2024-09-01',
-    fullName: 'Carlos Rodríguez Martín',
-    photoCount: 3,
-    paymentCount: 2,
-    totalDebt: 1500,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: '3',
-    schoolId: '1',
-    gradeId: '1',
-    firstName: 'Ana',
-    lastName: 'Sánchez Pérez',
-    studentId: 'EST003',
-    email: 'ana.sanchez@email.com',
-    status: 'active' as const,
-    enrollmentDate: '2024-09-01',
-    fullName: 'Ana Sánchez Pérez',
-    photoCount: 7,
-    paymentCount: 4,
-    totalDebt: 0,
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
-];
-
-const mockGrade = {
-  id: '1',
-  name: '1° Primaria',
-  level: 'Primaria',
-  academicYear: '2024-2025',
-  studentCount: 25,
-  activeStudents: 24,
-};
-
-const mockSchool = {
-  name: 'Universidad Nacional',
-  address: 'Av. Universidad 3000, Coyoacán, CDMX',
-};
 
 export default function GradeDetailScreen() {
   const { schoolId, gradeId } = useLocalSearchParams<{ 
@@ -87,29 +24,64 @@ export default function GradeDetailScreen() {
   const router = useRouter();
   const { isDarkColorScheme } = useColorScheme();
   
-  const [students] = useState(mockStudents);
   const [searchQuery, setSearchQuery] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
+  const [showCreateStudentModal, setShowCreateStudentModal] = useState(false);
+
+  // Queries
+  const { 
+    data: school, 
+    isLoading: schoolLoading, 
+    error: schoolError,
+    refetch: refetchSchool
+  } = useSchool(schoolId);
+  
+  const { 
+    data: grade, 
+    isLoading: gradeLoading, 
+    error: gradeError,
+    refetch: refetchGrade
+  } = useGrade(gradeId);
+  
+  const { 
+    data: studentsData, 
+    isLoading: studentsLoading, 
+    error: studentsError,
+    refetch: refetchStudents
+  } = useGradeStudents(gradeId, { limit: 50 });
+
+  const createStudentMutation = useCreateStudent();
+  
+  const students = studentsData?.data || [];
 
   const filteredStudents = students.filter(student =>
-    student.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (student.fullName || `${student.firstName} ${student.lastName}`).toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.studentId.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
+    try {
+      await Promise.all([refetchSchool(), refetchGrade(), refetchStudents()]);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    }
   };
 
-  const handleStudentPress = (student: typeof mockStudents[0]) => {
+  const handleStudentPress = (student: StudentWithDetails) => {
     router.push(`/(protected)/escuelas/${schoolId}/grados/${gradeId}/estudiante/${student.id}`);
   };
 
   const handleAddStudent = () => {
-    Alert.alert('Agregar Estudiante', 'Funcionalidad en desarrollo...');
+    setShowCreateStudentModal(true);
+  };
+
+  const handleCreateStudent = async (studentData: any) => {
+    try {
+      await createStudentMutation.mutateAsync(studentData);
+      setShowCreateStudentModal(false);
+      Alert.alert('Éxito', 'Estudiante creado correctamente');
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo crear el estudiante. Inténtalo de nuevo.');
+    }
   };
 
   const renderEmptyState = () => (
@@ -135,31 +107,110 @@ export default function GradeDetailScreen() {
     </View>
   );
 
-  const renderStudentItem = ({ item }: { item: typeof mockStudents[0] }) => (
+  const renderStudentItem = ({ item }: { item: StudentWithDetails }) => (
     <StudentCard
       student={item}
       onPress={() => handleStudentPress(item)}
     />
   );
 
+  const isLoading = schoolLoading || gradeLoading || studentsLoading;
+  const hasError = schoolError || gradeError || studentsError;
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator 
+            size="large" 
+            color={isDarkColorScheme ? '#22C55E' : '#16A34A'} 
+          />
+          <Text className="text-muted-foreground mt-4">
+            Cargando información...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (hasError) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 justify-center items-center px-6">
+          <Text className="text-xl font-semibold text-foreground mb-2 text-center">
+            Error al cargar datos
+          </Text>
+          <Text className="text-muted-foreground text-center mb-6">
+            {(schoolError || gradeError || studentsError)?.message || 'Ha ocurrido un error inesperado'}
+          </Text>
+          <Button onPress={handleRefresh}>
+            <Text className="text-primary-foreground">Reintentar</Text>
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // School or grade not found
+  if (!school || !grade) {
+    return (
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 justify-center items-center px-6">
+          <Text className="text-xl font-semibold text-foreground mb-2 text-center">
+            {!school ? 'Escuela no encontrada' : 'Grado no encontrado'}
+          </Text>
+          <Text className="text-muted-foreground text-center mb-6">
+            {!school 
+              ? 'La escuela que buscas no existe o ha sido eliminada.' 
+              : 'El grado que buscas no existe o ha sido eliminado.'}
+          </Text>
+          <Button onPress={() => router.back()}>
+            <Text className="text-primary-foreground">Volver</Text>
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <View className="flex-1 bg-background pt-6">
+    <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-1">
+        {/* Breadcrumb Navigation */}
+        <BreadcrumbNavigation
+          items={[
+            {
+              label: 'Escuelas',
+              onPress: () => router.push('/(protected)/escuelas'),
+            },
+            {
+              label: school.name,
+              onPress: () => router.push(`/(protected)/escuelas/${schoolId}`),
+            },
+            {
+              label: grade.name,
+              isActive: true,
+            },
+          ]}
+        />
+      
       {/* Grade Header */}
       <View className="px-6 pb-4">
         <View className="mb-4">
           <Text className="text-2xl font-bold text-foreground mb-1">
-            {mockGrade.name}
+            {grade.name}
           </Text>
           <Text className="text-muted-foreground mb-1">
-            {mockSchool.name}
+            {school.name}
           </Text>
           <Text className="text-muted-foreground mb-2">
-            {mockGrade.level} • Año académico {mockGrade.academicYear}
+            {grade.level} • Año académico {grade.academicYear}
           </Text>
           <Text className="text-muted-foreground">
             {filteredStudents.length} {filteredStudents.length === 1 ? 'estudiante' : 'estudiantes'}
-            {mockGrade.activeStudents !== mockGrade.studentCount && (
-              ` • ${mockGrade.activeStudents} activos`
+            {grade.activeStudents && grade.activeStudents !== grade.studentCount && (
+              ` • ${grade.activeStudents} activos`
             )}
           </Text>
         </View>
@@ -185,7 +236,7 @@ export default function GradeDetailScreen() {
         ListEmptyComponent={renderEmptyState}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={isLoading}
             onRefresh={handleRefresh}
             tintColor={isDarkColorScheme ? '#22C55E' : '#16A34A'}
           />
@@ -197,7 +248,21 @@ export default function GradeDetailScreen() {
       />
 
       {/* Floating Action Button */}
-      <Fab onPress={handleAddStudent} />
-    </View>
+      <Fab 
+        onPress={handleAddStudent}
+        disabled={createStudentMutation.isPending}
+      />
+
+      {/* Create Student Modal */}
+      <CreateStudentModal
+        visible={showCreateStudentModal}
+        onClose={() => setShowCreateStudentModal(false)}
+        onSave={handleCreateStudent}
+        schoolId={schoolId}
+        gradeId={gradeId}
+        isLoading={createStudentMutation.isPending}
+      />
+      </View>
+    </SafeAreaView>
   );
 }

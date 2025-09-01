@@ -10,61 +10,7 @@ import { Button } from './button';
 import { ExpandableSection } from './expandable-section';
 import { QuickActions } from './quick-actions';
 import { useColorScheme } from '~/src/hooks/ui/useColorScheme';
-
-interface StudentWithDetails {
-  id: string;
-  schoolId: string;
-  gradeId: string;
-  firstName: string;
-  lastName: string;
-  studentId: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-  birthDate?: string;
-  gender?: 'male' | 'female' | 'other';
-  emergencyContactName?: string;
-  emergencyContactPhone?: string;
-  status: 'active' | 'inactive' | 'graduated';
-  enrollmentDate: string;
-  graduationDate?: string;
-  notes?: string;
-  fullName: string;
-  age?: number;
-  photoCount: number;
-  paymentCount: number;
-  totalDebt: number;
-  school: {
-    id: string;
-    name: string;
-    address: string;
-    phone?: string;
-    email?: string;
-  };
-  grade: {
-    id: string;
-    name: string;
-    level: string;
-    academicYear?: string;
-  };
-  recentPhotos?: Array<{
-    id: string;
-    studentId: string;
-    photoUrl: string;
-    photoType: 'profile' | 'graduation' | 'event' | 'id_card' | 'other';
-    takenDate: string;
-  }>;
-  recentPayments?: Array<{
-    id: string;
-    studentId: string;
-    amount: number;
-    paymentType: 'tuition' | 'registration' | 'materials' | 'events' | 'other';
-    paymentMethod: 'cash' | 'card' | 'transfer' | 'check';
-    paymentDate: string;
-    status: 'pending' | 'paid' | 'overdue' | 'cancelled';
-    description?: string;
-  }>;
-}
+import type { StudentWithDetails } from '~/src/types/database';
 
 interface StudentDetailProps {
   student: StudentWithDetails;

@@ -59,11 +59,13 @@ export function ExpandableSection({
           )}
         </View>
         
-        {isExpanded ? (
-          <ChevronDown size={20} color={iconColor} />
-        ) : (
-          <ChevronRight size={20} color={iconColor} />
-        )}
+        <View>
+          {isExpanded ? (
+            <ChevronDown size={20} color={iconColor} />
+          ) : (
+            <ChevronRight size={20} color={iconColor} />
+          )}
+        </View>
       </Pressable>
 
       {isExpanded && (

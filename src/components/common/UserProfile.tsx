@@ -11,22 +11,31 @@ export function UserProfile() {
   const { signOut } = useAuthActions();
   const { data: profile, isLoading, error } = useUserProfile();
 
-  // Debug logging and profile creation
+  // Debug logging and profile creation - optimized to prevent loops
   React.useEffect(() => {
-    console.log('UserProfile Debug Info:');
-    console.log('- Auth User:', authUser ? { id: authUser.id, email: authUser.email } : null);
-    console.log('- Profile Data:', profile);
-    console.log('- Is Loading:', isLoading);
-    console.log('- Error:', error);
-
-    // If there's an error and we have an authenticated user, try to create profile
-    if (error && authUser && !isLoading) {
+    console.log('UserProfile Debug Info:', {
+      hasAuthUser: !!authUser,
+      hasProfile: !!profile,
+      isLoading,
+      hasError: !!error
+    });
+  }, [!!authUser, !!profile, isLoading, !!error]); // Use boolean values to prevent object comparison loops
+  
+  // Separate effect for profile creation to avoid cascading loops
+  React.useEffect(() => {
+    // Only attempt profile creation if we have a clear error and authenticated user
+    if (error && authUser && !isLoading && !profile) {
       console.log('Attempting to create missing user profile...');
-      ensureUserProfile(authUser).catch(err => {
-        console.error('Failed to ensure user profile:', err);
-      });
+      const createProfile = async () => {
+        try {
+          await ensureUserProfile(authUser);
+        } catch (err) {
+          console.error('Failed to ensure user profile:', err);
+        }
+      };
+      createProfile();
     }
-  }, [authUser, profile, isLoading, error]);
+  }, [!!error, !!authUser, isLoading, !!profile]); // Stable dependencies
 
   const handleDebugProfile = async () => {
     if (!authUser) return;

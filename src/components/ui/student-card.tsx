@@ -49,16 +49,29 @@ export function StudentCard({
   const { isDarkColorScheme } = useColorScheme();
   const iconColor = isDarkColorScheme ? '#94A3B8' : '#64748B';
 
-  const getStatusColor = (status: string) => {
+  const getStatusBgColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200';
+        return 'bg-green-100 dark:bg-green-900';
       case 'inactive':
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
+        return 'bg-gray-100 dark:bg-gray-800';
       case 'graduated':
-        return 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200';
+        return 'bg-blue-100 dark:bg-blue-900';
       default:
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
+        return 'bg-gray-100 dark:bg-gray-800';
+    }
+  };
+
+  const getStatusTextColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'text-green-800 dark:text-green-200';
+      case 'inactive':
+        return 'text-gray-600 dark:text-gray-400';
+      case 'graduated':
+        return 'text-blue-800 dark:text-blue-200';
+      default:
+        return 'text-gray-600 dark:text-gray-400';
     }
   };
 
@@ -82,9 +95,9 @@ export function StudentCard({
                 {student.fullName || `${student.firstName} ${student.lastName}`}
               </Text>
               <View 
-                className={`px-2 py-1 rounded-full ${getStatusColor(student.status)}`}
+                className={`px-2 py-1 rounded-full ${getStatusBgColor(student.status)}`}
               >
-                <Text className={`text-xs font-medium ${getStatusColor(student.status).split(' ').pop()}`}>
+                <Text className={`text-xs font-medium ${getStatusTextColor(student.status)}`}>
                   {getStatusText(student.status)}
                 </Text>
               </View>
@@ -92,7 +105,9 @@ export function StudentCard({
             
             {/* Student ID */}
             <View className="flex-row items-center mb-2">
-              <User size={14} color={iconColor} />
+              <View>
+                <User size={14} color={iconColor} />
+              </View>
               <Text className="text-sm text-muted-foreground ml-1">
                 ID: {student.studentId}
               </Text>
@@ -104,14 +119,18 @@ export function StudentCard({
             </View>
           </View>
           
-          <ChevronRight size={20} color={iconColor} />
+          <View>
+            <ChevronRight size={20} color={iconColor} />
+          </View>
         </View>
 
         {/* Contact Info */}
         <View className="mb-3">
           {student.email && (
             <View className="flex-row items-center mb-1">
-              <Mail size={14} color={iconColor} />
+              <View>
+                <Mail size={14} color={iconColor} />
+              </View>
               <Text className="text-sm text-muted-foreground ml-1 flex-1" numberOfLines={1}>
                 {student.email}
               </Text>
@@ -120,7 +139,9 @@ export function StudentCard({
           
           {student.phone && (
             <View className="flex-row items-center">
-              <Phone size={14} color={iconColor} />
+              <View>
+                <Phone size={14} color={iconColor} />
+              </View>
               <Text className="text-sm text-muted-foreground ml-1">
                 {student.phone}
               </Text>
@@ -131,14 +152,18 @@ export function StudentCard({
         {/* Stats Row */}
         <View className="flex-row items-center justify-between mb-3">
           <View className="flex-row items-center">
-            <Camera size={16} color={iconColor} />
+            <View>
+              <Camera size={16} color={iconColor} />
+            </View>
             <Text className="text-sm text-muted-foreground ml-1">
               {student.photoCount || 0} fotos
             </Text>
           </View>
           
           <View className="flex-row items-center">
-            <CreditCard size={16} color={iconColor} />
+            <View>
+              <CreditCard size={16} color={iconColor} />
+            </View>
             <Text className="text-sm text-muted-foreground ml-1">
               {student.paymentCount || 0} pagos
             </Text>
@@ -149,7 +174,9 @@ export function StudentCard({
         {student.totalDebt && student.totalDebt > 0 && (
           <View className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-2">
             <View className="flex-row items-center">
-              <AlertCircle size={14} color="#DC2626" />
+              <View>
+                <AlertCircle size={14} color="#DC2626" />
+              </View>
               <Text className="text-sm font-medium text-red-800 dark:text-red-200 ml-1">
                 Deuda pendiente: ${student.totalDebt.toLocaleString()}
               </Text>

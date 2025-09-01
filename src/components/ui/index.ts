@@ -16,6 +16,8 @@ export { StudentDetail } from './student-detail';
 export { Fab } from './fab';
 export { SchoolModal } from './school-modal';
 export { SchoolDetail } from './school-detail';
+export { CreateGradeModal } from './create-grade-modal';
+export { CreateStudentModal } from './create-student-modal';
 
 // Enhanced UI components
 export { BreadcrumbNavigation } from './breadcrumb-navigation';

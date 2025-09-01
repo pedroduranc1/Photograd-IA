@@ -3,7 +3,6 @@ import { View, Pressable, Alert } from 'react-native';
 import { MapPin, Users, Calendar, Phone, Mail, MoreVertical } from 'lucide-react-native';
 import { Card } from './card';
 import { Text } from './text';
-import { Button } from './button';
 import { useColorScheme } from '~/src/hooks/ui/useColorScheme';
 
 export interface School {
@@ -143,31 +142,23 @@ export function SchoolCard({
         {/* Action Buttons */}
         <View className="flex-row space-x-2">
           {school.phone && (
-            <Button
-              variant="outline"
-              size="sm"
+            <Pressable
               onPress={onCall}
-              className="flex-1"
+              className="flex-1 flex-row items-center justify-center h-9 rounded-md px-3 border border-input bg-background active:bg-accent"
             >
-              <View className="flex-row items-center">
-                <Phone size={14} color={iconColor} />
-                <Text className="ml-1 text-sm">Llamar</Text>
-              </View>
-            </Button>
+              <Phone size={14} color={iconColor} />
+              <Text className="ml-1 text-sm">Llamar</Text>
+            </Pressable>
           )}
           
           {school.email && (
-            <Button
-              variant="outline"
-              size="sm"
+            <Pressable
               onPress={onEmail}
-              className="flex-1"
+              className="flex-1 flex-row items-center justify-center h-9 rounded-md px-3 border border-input bg-background active:bg-accent"
             >
-              <View className="flex-row items-center">
-                <Mail size={14} color={iconColor} />
-                <Text className="ml-1 text-sm">Email</Text>
-              </View>
-            </Button>
+              <Mail size={14} color={iconColor} />
+              <Text className="ml-1 text-sm">Email</Text>
+            </Pressable>
           )}
         </View>
       </Pressable>

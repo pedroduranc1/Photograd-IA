@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, FlatList, Alert, RefreshControl, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Text } from '~/src/components/ui/text';
 import { Button } from '~/src/components/ui/button';
@@ -7,6 +8,7 @@ import { SearchInput } from '~/src/components/ui/search-input';
 import { GradeCard } from '~/src/components/ui/grade-card';
 import { Fab } from '~/src/components/ui/fab';
 import { BreadcrumbNavigation } from '~/src/components/ui/breadcrumb-navigation';
+import { CreateGradeModal } from '~/src/components/ui/create-grade-modal';
 import { useColorScheme } from '~/src/hooks/ui/useColorScheme';
 import { useSchool } from '~/src/hooks/data/use-school-queries';
 import { useSchoolGrades, useCreateGrade } from '~/src/hooks/data/use-grade-queries';
@@ -18,6 +20,7 @@ export default function SchoolDetailScreen() {
   const { isDarkColorScheme } = useColorScheme();
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [showCreateGradeModal, setShowCreateGradeModal] = useState(false);
 
   // Queries
   const { 
@@ -56,7 +59,17 @@ export default function SchoolDetailScreen() {
   };
 
   const handleAddGrade = () => {
-    Alert.alert('Agregar Grado', 'Funcionalidad en desarrollo...');
+    setShowCreateGradeModal(true);
+  };
+
+  const handleCreateGrade = async (gradeData: any) => {
+    try {
+      await createGradeMutation.mutateAsync(gradeData);
+      setShowCreateGradeModal(false);
+      Alert.alert('Éxito', 'Grado creado correctamente');
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo crear el grado. Inténtalo de nuevo.');
+    }
   };
 
   const isLoading = schoolLoading || gradesLoading;
@@ -95,54 +108,61 @@ export default function SchoolDetailScreen() {
   // Loading state
   if (isLoading) {
     return (
-      <View className="flex-1 bg-background pt-6 justify-center items-center">
-        <ActivityIndicator 
-          size="large" 
-          color={isDarkColorScheme ? '#22C55E' : '#16A34A'} 
-        />
-        <Text className="text-muted-foreground mt-4">
-          Cargando información...
-        </Text>
-      </View>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator 
+            size="large" 
+            color={isDarkColorScheme ? '#22C55E' : '#16A34A'} 
+          />
+          <Text className="text-muted-foreground mt-4">
+            Cargando información...
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   // Error state
   if (hasError) {
     return (
-      <View className="flex-1 bg-background pt-6 justify-center items-center px-6">
-        <Text className="text-xl font-semibold text-foreground mb-2 text-center">
-          Error al cargar datos
-        </Text>
-        <Text className="text-muted-foreground text-center mb-6">
-          {(schoolError || gradesError)?.message || 'Ha ocurrido un error inesperado'}
-        </Text>
-        <Button onPress={handleRefresh}>
-          <Text className="text-primary-foreground">Reintentar</Text>
-        </Button>
-      </View>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 justify-center items-center px-6">
+          <Text className="text-xl font-semibold text-foreground mb-2 text-center">
+            Error al cargar datos
+          </Text>
+          <Text className="text-muted-foreground text-center mb-6">
+            {(schoolError || gradesError)?.message || 'Ha ocurrido un error inesperado'}
+          </Text>
+          <Button onPress={handleRefresh}>
+            <Text className="text-primary-foreground">Reintentar</Text>
+          </Button>
+        </View>
+      </SafeAreaView>
     );
   }
 
   // School not found
   if (!school) {
     return (
-      <View className="flex-1 bg-background pt-6 justify-center items-center px-6">
-        <Text className="text-xl font-semibold text-foreground mb-2 text-center">
-          Escuela no encontrada
-        </Text>
-        <Text className="text-muted-foreground text-center mb-6">
-          La escuela que buscas no existe o ha sido eliminada.
-        </Text>
-        <Button onPress={() => router.back()}>
-          <Text className="text-primary-foreground">Volver</Text>
-        </Button>
-      </View>
+      <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 justify-center items-center px-6">
+          <Text className="text-xl font-semibold text-foreground mb-2 text-center">
+            Escuela no encontrada
+          </Text>
+          <Text className="text-muted-foreground text-center mb-6">
+            La escuela que buscas no existe o ha sido eliminada.
+          </Text>
+          <Button onPress={() => router.back()}>
+            <Text className="text-primary-foreground">Volver</Text>
+          </Button>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View className="flex-1 bg-background pt-6">
+    <SafeAreaView className="flex-1 bg-background">
+      <View className="flex-1">
       {/* Breadcrumb Navigation */}
       <BreadcrumbNavigation
         items={[
@@ -209,6 +229,16 @@ export default function SchoolDetailScreen() {
         onPress={handleAddGrade}
         disabled={createGradeMutation.isPending}
       />
-    </View>
+
+      {/* Create Grade Modal */}
+      <CreateGradeModal
+        visible={showCreateGradeModal}
+        onClose={() => setShowCreateGradeModal(false)}
+        onSave={handleCreateGrade}
+        schoolId={schoolId}
+        isLoading={createGradeMutation.isPending}
+      />
+      </View>
+    </SafeAreaView>
   );
 }

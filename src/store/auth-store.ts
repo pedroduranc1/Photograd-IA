@@ -267,49 +267,50 @@ export const useAuthStore = create<AuthState & AuthActions>()(
   }))
 );
 
-// Selectors for easy access to specific state slices
+// Selectors for easy access to specific state slices - Fixed to prevent getSnapshot infinite loop
 export const useAuthUser = () => {
-  const user = useAuthStore((state) => state.user);
-  console.log('🔍 useAuthUser:', !!user);
-  return user;
+  return useAuthStore((state) => state.user);
 };
+
 export const useAuthSession = () => useAuthStore((state) => state.session);
+
 export const useAuthLoading = () => {
-  const loading = useAuthStore((state) => state.isLoading);
-  const _isInitializing = useAuthStore((state) => state._isInitializing);
-  console.log('🔍 useAuthLoading:', { loading, _isInitializing });
-  return loading;
+  return useAuthStore((state) => state.isLoading);
 };
+
+// Fixed selector: Return primitive value directly to prevent object creation
 export const useAuthInitialized = () => {
-  const state = useAuthStore((state) => ({ 
-    isInitialized: state.isInitialized, 
-    _isInitializing: state._isInitializing,
-    isLoading: state.isLoading
-  }));
-  console.log('🔍 useAuthInitialized:', state);
-  return state.isInitialized;
+  return useAuthStore((state) => state.isInitialized);
 };
+
+// Fixed selector: Use shallow equality check with useMemo for complex derived state
 export const useIsAuthenticated = () => {
-  const state = useAuthStore((state) => ({ 
-    user: state.user, 
-    session: state.session,
-    isInitialized: state.isInitialized 
-  }));
-  const authenticated = Boolean(state.user && state.session);
-  console.log('🔍 useIsAuthenticated:', { ...state, authenticated });
-  return authenticated;
+  return useAuthStore((state) => {
+    // Return primitive boolean directly to prevent object creation
+    // This prevents the getSnapshot infinite loop warning
+    return Boolean(state.user && state.session);
+  });
 };
 
 // Auth actions selectors - Fixed to prevent getSnapshot infinite loop
+// Individual action selectors to prevent object creation issues
+export const useSignUp = () => useAuthStore((state) => state.signUp);
+export const useSignIn = () => useAuthStore((state) => state.signIn);
+export const useSignOut = () => useAuthStore((state) => state.signOut);
+export const useResetPassword = () => useAuthStore((state) => state.resetPassword);
+export const useUpdatePassword = () => useAuthStore((state) => state.updatePassword);
+export const useUpdateProfile = () => useAuthStore((state) => state.updateProfile);
+export const useInitializeAuth = () => useAuthStore((state) => state.initialize);
+
+// Combined hook using useMemo for cases where you need all actions
 export const useAuthActions = () => {
-  // Get individual action functions from the store
-  const signUp = useAuthStore((state) => state.signUp);
-  const signIn = useAuthStore((state) => state.signIn);
-  const signOut = useAuthStore((state) => state.signOut);
-  const resetPassword = useAuthStore((state) => state.resetPassword);
-  const updatePassword = useAuthStore((state) => state.updatePassword);
-  const updateProfile = useAuthStore((state) => state.updateProfile);
-  const initialize = useAuthStore((state) => state.initialize);
+  const signUp = useSignUp();
+  const signIn = useSignIn();
+  const signOut = useSignOut();
+  const resetPassword = useResetPassword();
+  const updatePassword = useUpdatePassword();
+  const updateProfile = useUpdateProfile();
+  const initialize = useInitializeAuth();
 
   // Memoize the returned object to prevent creating new references on every render
   return useMemo(() => ({
