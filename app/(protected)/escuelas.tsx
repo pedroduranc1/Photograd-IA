@@ -23,6 +23,7 @@ import {
 } from '~/src/hooks/data/use-school-queries';
 import { useAuthStore } from '~/src/store/auth-store';
 import type { SchoolWithStats } from '~/src/types/database';
+import { generateId } from '~/src/utils/id-generator';
 
 export default function EscuelasScreen() {
   const { isDarkColorScheme } = useColorScheme();
@@ -105,7 +106,7 @@ export default function EscuelasScreen() {
     );
   };
 
-  const handleSaveSchool = async (schoolData: Partial<SchoolWithStats>) => {
+  const handleSaveSchool = async (schoolData: Omit<SchoolWithStats, 'createdAt' | 'updatedAt'>) => {
     if (!user?.id) {
       Alert.alert('Error', 'Usuario no autenticado');
       return;
@@ -115,13 +116,13 @@ export default function EscuelasScreen() {
       if (modalMode === 'add') {
         const newSchool = {
           ...schoolData,
-          id: `school_${Date.now()}`,
+          id: generateId.school(),
           userId: user.id,
           status: 'active' as const,
           debtAmount: 0,
         };
         
-        await createSchoolMutation.mutateAsync(newSchool as any);
+        await createSchoolMutation.mutateAsync(newSchool);
         Alert.alert('Éxito', 'Escuela agregada correctamente');
       } else if (selectedSchool) {
         await updateSchoolMutation.mutateAsync({
@@ -286,7 +287,7 @@ export default function EscuelasScreen() {
         onSave={handleSaveSchool}
         school={selectedSchool}
         mode={modalMode}
-        loading={createSchoolMutation.isPending || updateSchoolMutation.isPending}
+        isLoading={createSchoolMutation.isPending || updateSchoolMutation.isPending}
       />
     </View>
   );

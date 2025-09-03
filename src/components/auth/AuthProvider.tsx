@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useInitializeAuth } from '../../store/auth-store';
-import { databaseService } from '../../services/database-service';
 import { logConfigurationStatus } from '../../utils/config-checker';
+import { initializeDatabase } from '../../utils/database-init';
 
 console.log('🚀 AuthProvider: Module loaded!');
 
@@ -45,30 +45,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // Check configuration first
             logConfigurationStatus();
             
-            // Initialize database tables with web-safe timeout
-            if (typeof window !== 'undefined') {
-              try {
-                // Add timeout for web to prevent hanging
-                const dbInitPromise = databaseService.initializeTables();
-                const timeoutPromise = new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('Database initialization timeout')), 5000)
-                );
-                
-                const dbResult = await Promise.race([dbInitPromise, timeoutPromise]) as any;
-                if (!dbResult || !dbResult.success) {
-                  console.warn('⚠️ AuthProvider: Database initialization failed or timed out on web');
-                }
-              } catch (error) {
-                console.warn('⚠️ AuthProvider: Database initialization failed on web:', error);
-                // Continue with auth initialization even if database fails
+            // Initialize database
+            try {
+              console.log('🔄 AuthProvider: Initializing database...');
+              const dbSuccess = await initializeDatabase();
+              if (dbSuccess) {
+                console.log('✅ AuthProvider: Database initialization successful');
+              } else {
+                console.warn('⚠️ AuthProvider: Database initialization failed');
               }
-            } else {
-              // Native platform - initialize database normally
-              const dbResult = await databaseService.initializeTables();
-              if (!dbResult.success) {
-                console.error('❌ AuthProvider: Database initialization failed:', dbResult.error);
-                // Don't fail completely if database init fails - continue with auth
-              }
+            } catch (error) {
+              console.warn('⚠️ AuthProvider: Database initialization error:', error);
+              // Continue with auth initialization even if database fails
             }
             
             // Then initialize auth
@@ -104,30 +92,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
           // Check configuration first
           logConfigurationStatus();
           
-          // Initialize database tables with web-safe timeout
-          if (typeof window !== 'undefined') {
-            try {
-              // Add timeout for web to prevent hanging
-              const dbInitPromise = databaseService.initializeTables();
-              const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Database initialization timeout')), 5000)
-              );
-              
-              const dbResult = await Promise.race([dbInitPromise, timeoutPromise]) as any;
-              if (!dbResult || !dbResult.success) {
-                console.warn('⚠️ AuthProvider: Database initialization failed or timed out on web');
-              }
-            } catch (error) {
-              console.warn('⚠️ AuthProvider: Database initialization failed on web:', error);
-              // Continue with auth initialization even if database fails
+          // Initialize database
+          try {
+            console.log('🔄 AuthProvider: Initializing database (fallback)...');
+            const dbSuccess = await initializeDatabase();
+            if (dbSuccess) {
+              console.log('✅ AuthProvider: Database initialization successful (fallback)');
+            } else {
+              console.warn('⚠️ AuthProvider: Database initialization failed (fallback)');
             }
-          } else {
-            // Native platform - initialize database normally
-            const dbResult = await databaseService.initializeTables();
-            if (!dbResult.success) {
-              console.error('❌ AuthProvider: Database initialization failed:', dbResult.error);
-              // Don't fail completely if database init fails - continue with auth
-            }
+          } catch (error) {
+            console.warn('⚠️ AuthProvider: Database initialization error (fallback):', error);
+            // Continue with auth initialization even if database fails
           }
           
           // Then initialize auth

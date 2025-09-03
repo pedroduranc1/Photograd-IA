@@ -14,6 +14,7 @@ import { useGrade } from '~/src/hooks/data/use-grade-queries';
 import { useSchool } from '~/src/hooks/data/use-school-queries';
 import { useGradeStudents, useCreateStudent } from '~/src/hooks/data/use-student-queries';
 import type { StudentWithDetails } from '~/src/types/database';
+import { generateId } from '~/src/utils/id-generator';
 
 
 export default function GradeDetailScreen() {
@@ -76,11 +77,16 @@ export default function GradeDetailScreen() {
 
   const handleCreateStudent = async (studentData: any) => {
     try {
-      await createStudentMutation.mutateAsync(studentData);
+      const newStudent = {
+        ...studentData,
+        id: generateId.student(),
+      };
+      await createStudentMutation.mutateAsync(newStudent);
       setShowCreateStudentModal(false);
       Alert.alert('Éxito', 'Estudiante creado correctamente');
     } catch (error) {
       Alert.alert('Error', 'No se pudo crear el estudiante. Inténtalo de nuevo.');
+      console.error('Error creating student:', error);
     }
   };
 

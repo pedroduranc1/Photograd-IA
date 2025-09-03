@@ -4,6 +4,7 @@ import { MapPin, Users, Calendar, Phone, Mail, MoreVertical } from 'lucide-react
 import { Card } from './card';
 import { Text } from './text';
 import { useColorScheme } from '~/src/hooks/ui/useColorScheme';
+import type { SchoolWithStats } from '~/src/types/database';
 
 export interface School {
   id: string;
@@ -18,6 +19,10 @@ export interface School {
   debtAmount?: number;
   grades: string[];
 }
+
+// Legacy interface for compatibility
+export type LegacySchool = School;
+export type DatabaseSchool = SchoolWithStats;
 
 interface SchoolCardProps {
   school: School;

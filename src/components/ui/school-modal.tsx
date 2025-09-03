@@ -14,14 +14,15 @@ import { Input } from './input';
 import { Button } from './button';
 import { Card } from './card';
 import { useColorScheme } from '~/src/hooks/ui/useColorScheme';
-import type { School } from './school-card';
+import type { School } from '~/src/types/database';
 
 interface SchoolModalProps {
   visible: boolean;
   onClose: () => void;
-  onSave: (school: Partial<School>) => void;
+  onSave: (school: Omit<School, 'createdAt' | 'updatedAt'>) => void;
   school?: School | null;
   mode: 'add' | 'edit';
+  isLoading?: boolean;
 }
 
 export function SchoolModal({
@@ -30,6 +31,7 @@ export function SchoolModal({
   onSave,
   school,
   mode,
+  isLoading = false,
 }: SchoolModalProps) {
   const { isDarkColorScheme } = useColorScheme();
   const [formData, setFormData] = useState({
@@ -48,12 +50,12 @@ export function SchoolModal({
     if (school && mode === 'edit') {
       setFormData({
         name: school.name || '',
-        location: school.location || '',
+        location: school.address || '', // Use address as location
         address: school.address || '',
         phone: school.phone || '',
         email: school.email || '',
-        studentCount: school.studentCount?.toString() || '',
-        grades: school.grades?.join(', ') || '',
+        studentCount: school.studentCount?.toString() || '0',
+        grades: '', // This is handled by the grades system now
       });
     } else {
       // Reset form for add mode
@@ -98,15 +100,16 @@ export function SchoolModal({
       return;
     }
 
-    const schoolData: Partial<School> = {
+    const schoolData: Omit<School, 'createdAt' | 'updatedAt'> = {
+      id: school?.id || '', // Will be set by the parent component
+      userId: school?.userId || '', // Will be set by the parent component
       name: formData.name.trim(),
-      location: formData.location.trim(),
-      address: formData.address.trim() || undefined,
+      address: formData.address.trim() || formData.location.trim(), // Use address field
       phone: formData.phone.trim() || undefined,
       email: formData.email.trim() || undefined,
-      studentCount: formData.studentCount ? Number(formData.studentCount) : 0,
-      grades: formData.grades ? formData.grades.split(',').map(g => g.trim()).filter(Boolean) : [],
       status: 'active',
+      debtAmount: 0,
+      nextGraduation: undefined,
     };
 
     if (mode === 'edit' && school) {

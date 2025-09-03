@@ -54,15 +54,24 @@ export function useCreateSchool() {
 
   return useMutation({
     mutationFn: async (school: Omit<School, 'createdAt' | 'updatedAt'>) => {
-      const result = await databaseService.createSchool(school);
-      if (!result.success) {
-        throw new Error(result.error?.message || 'Failed to create school');
+      try {
+        const result = await databaseService.createSchool(school);
+        if (!result.success || !result.data) {
+          throw new Error(result.error?.message || 'No se pudo crear la escuela');
+        }
+        return result.data;
+      } catch (error) {
+        console.error('Error in useCreateSchool mutation:', error);
+        throw error;
       }
-      return result.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate and refetch schools lists
       queryClient.invalidateQueries({ queryKey: schoolKeys.lists() });
+      console.log('School created successfully:', data);
+    },
+    onError: (error) => {
+      console.error('School creation failed:', error);
     },
   });
 }

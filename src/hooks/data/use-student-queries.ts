@@ -54,27 +54,36 @@ export function useCreateStudent() {
 
   return useMutation({
     mutationFn: async (student: Omit<Student, 'createdAt' | 'updatedAt'>) => {
-      const result = await databaseService.createStudent(student);
-      if (!result.success) {
-        throw new Error(result.error?.message || 'Failed to create student');
+      try {
+        const result = await databaseService.createStudent(student);
+        if (!result.success || !result.data) {
+          throw new Error(result.error?.message || 'No se pudo crear el estudiante');
+        }
+        return result.data;
+      } catch (error) {
+        console.error('Error in useCreateStudent mutation:', error);
+        throw error;
       }
-      return result.data;
     },
     onSuccess: (data) => {
       // Invalidate students for the grade and school
       queryClient.invalidateQueries({ 
-        queryKey: studentKeys.list({ gradeId: data!.gradeId }) 
+        queryKey: studentKeys.list({ gradeId: data.gradeId }) 
       });
       queryClient.invalidateQueries({ 
-        queryKey: studentKeys.list({ schoolId: data!.schoolId }) 
+        queryKey: studentKeys.list({ schoolId: data.schoolId }) 
       });
       // Update grade and school stats
       queryClient.invalidateQueries({ 
-        queryKey: ['grades', 'detail', data!.gradeId] 
+        queryKey: ['grades', 'detail', data.gradeId] 
       });
       queryClient.invalidateQueries({ 
-        queryKey: ['schools', 'detail', data!.schoolId] 
+        queryKey: ['schools', 'detail', data.schoolId] 
       });
+      console.log('Student created successfully:', data);
+    },
+    onError: (error) => {
+      console.error('Student creation failed:', error);
     },
   });
 }

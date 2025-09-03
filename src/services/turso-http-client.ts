@@ -72,8 +72,16 @@ export class TursoHttpClient {
       : statement;
 
     try {
+      // Add timeout and better error handling for non-localhost environments
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.warn('⚠️ Database request timed out - this often happens when not connected to localhost');
+      }, 15000); // 15 second timeout
+
       const response = await fetch(`${this.baseUrl}/v2/pipeline`, {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Authorization': `Bearer ${this.config.authToken}`,
           'Content-Type': 'application/json',
@@ -83,20 +91,50 @@ export class TursoHttpClient {
             type: 'execute',
             stmt: {
               sql,
-              args: (args || []).map(arg => ({
-                type: typeof arg === 'number' ? 'integer' : 
-                     typeof arg === 'boolean' ? 'integer' :
-                     arg === null ? 'null' : 'text',
-                value: arg === null ? null : String(arg)
-              })),
+              args: (args || []).map(arg => {
+                if (arg === null || arg === undefined) {
+                  return { type: 'null', value: null };
+                }
+                if (typeof arg === 'number') {
+                  return { 
+                    type: Number.isInteger(arg) ? 'integer' : 'real', 
+                    value: String(arg) 
+                  };
+                }
+                if (typeof arg === 'boolean') {
+                  return { type: 'integer', value: arg ? '1' : '0' };
+                }
+                return { type: 'text', value: String(arg) };
+              }),
             },
           }],
         }),
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Turso HTTP API error: ${response.status} - ${errorText}`);
+        console.error('Turso API Error Details:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          errorText,
+          sql: sql?.substring(0, 100) + (sql?.length > 100 ? '...' : ''),
+          argsCount: args?.length || 0
+        });
+        // Provide more specific error messages for common network issues
+        if (response.status === 0 || response.status >= 500) {
+          throw new Error('❌ Error de conexión: No se pudo conectar a la base de datos. Verifica tu conexión a internet.');
+        } else if (response.status === 401) {
+          throw new Error('❌ Error de autenticación: Token de base de datos inválido o expirado.');
+        } else if (response.status === 403) {
+          throw new Error('❌ Error de permisos: No tienes acceso a esta base de datos.');
+        } else if (response.status === 429) {
+          throw new Error('❌ Error de límite: Demasiadas solicitudes. Intenta de nuevo en unos momentos.');
+        } else {
+          throw new Error(`❌ Error de base de datos: ${response.status} - ${errorText}`);
+        }
       }
 
       const data: TursoHttpResponse = await response.json();
@@ -138,10 +176,21 @@ export class TursoHttpClient {
         lastInsertRowid: result.response.result.last_insert_rowid,
       };
     } catch (error) {
+      // Handle network connectivity errors specifically
       if (error instanceof Error) {
-        throw new Error(`Database execution failed: ${error.message}`);
+        if (error.name === 'AbortError') {
+          throw new Error('⏰ Timeout: La conexión a la base de datos tardó demasiado. Esto suele pasar cuando no estás conectado a localhost.');
+        }
+        if (error.message.includes('fetch')) {
+          throw new Error('🌐 Error de red: No se pudo conectar a la base de datos. Verifica tu conexión a internet y que no estés bloqueado por un firewall.');
+        }
+        // Re-throw our custom error messages
+        if (error.message.startsWith('❌')) {
+          throw error;
+        }
+        throw new Error(`💾 Error de base de datos: ${error.message}`);
       }
-      throw new Error('Database execution failed: Unknown error');
+      throw new Error('💾 Error de base de datos: Error desconocido');
     }
   }
 
@@ -158,12 +207,21 @@ export class TursoHttpClient {
             type: 'execute',
             stmt: {
               sql: stmt.sql,
-              args: (stmt.args || []).map(arg => ({
-                type: typeof arg === 'number' ? 'integer' : 
-                     typeof arg === 'boolean' ? 'integer' :
-                     arg === null ? 'null' : 'text',
-                value: arg === null ? null : String(arg)
-              })),
+              args: (stmt.args || []).map(arg => {
+                if (arg === null || arg === undefined) {
+                  return { type: 'null', value: null };
+                }
+                if (typeof arg === 'number') {
+                  return { 
+                    type: Number.isInteger(arg) ? 'integer' : 'real', 
+                    value: String(arg) 
+                  };
+                }
+                if (typeof arg === 'boolean') {
+                  return { type: 'integer', value: arg ? '1' : '0' };
+                }
+                return { type: 'text', value: String(arg) };
+              }),
             },
           })),
         }),
@@ -171,7 +229,26 @@ export class TursoHttpClient {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Turso HTTP API error: ${response.status} - ${errorText}`);
+        console.error('Turso API Error Details:', {
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url,
+          errorText,
+          sql: sql?.substring(0, 100) + (sql?.length > 100 ? '...' : ''),
+          argsCount: args?.length || 0
+        });
+        // Provide more specific error messages for common network issues
+        if (response.status === 0 || response.status >= 500) {
+          throw new Error('❌ Error de conexión: No se pudo conectar a la base de datos. Verifica tu conexión a internet.');
+        } else if (response.status === 401) {
+          throw new Error('❌ Error de autenticación: Token de base de datos inválido o expirado.');
+        } else if (response.status === 403) {
+          throw new Error('❌ Error de permisos: No tienes acceso a esta base de datos.');
+        } else if (response.status === 429) {
+          throw new Error('❌ Error de límite: Demasiadas solicitudes. Intenta de nuevo en unos momentos.');
+        } else {
+          throw new Error(`❌ Error de base de datos: ${response.status} - ${errorText}`);
+        }
       }
 
       const data: TursoHttpResponse = await response.json();

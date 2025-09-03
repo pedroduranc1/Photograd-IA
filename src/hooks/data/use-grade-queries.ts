@@ -54,21 +54,30 @@ export function useCreateGrade() {
 
   return useMutation({
     mutationFn: async (grade: Omit<Grade, 'createdAt' | 'updatedAt'>) => {
-      const result = await databaseService.createGrade(grade);
-      if (!result.success) {
-        throw new Error(result.error?.message || 'Failed to create grade');
+      try {
+        const result = await databaseService.createGrade(grade);
+        if (!result.success || !result.data) {
+          throw new Error(result.error?.message || 'No se pudo crear el grado');
+        }
+        return result.data;
+      } catch (error) {
+        console.error('Error in useCreateGrade mutation:', error);
+        throw error;
       }
-      return result.data;
     },
     onSuccess: (data) => {
       // Invalidate grades for the school
       queryClient.invalidateQueries({ 
-        queryKey: gradeKeys.list({ schoolId: data!.schoolId }) 
+        queryKey: gradeKeys.list({ schoolId: data.schoolId }) 
       });
       // Also invalidate school details to update grade count
       queryClient.invalidateQueries({ 
-        queryKey: ['schools', 'detail', data!.schoolId] 
+        queryKey: ['schools', 'detail', data.schoolId] 
       });
+      console.log('Grade created successfully:', data);
+    },
+    onError: (error) => {
+      console.error('Grade creation failed:', error);
     },
   });
 }

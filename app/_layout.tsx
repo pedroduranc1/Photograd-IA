@@ -12,6 +12,7 @@ import { ThemeToggle } from '~/src/components/layout/ThemeToggle';
 import { setAndroidNavigationBar } from '~/src/utils/android-navigation-bar';
 import { AuthProvider } from '~/src/components/auth/AuthProvider';
 import { AuthGuard } from '~/src/components/auth/AuthGuard';
+import { NetworkStatusIndicator } from '~/src/components/ui/NetworkStatusIndicator';
 
 const LIGHT_THEME: Theme = {
   ...DefaultTheme,
@@ -33,8 +34,37 @@ const usePlatformSpecificSetup = Platform.select({
   default: noop,
 });
 
+// Simple Web Layout
+function WebRootLayout() {
+  console.log('🌐 WEB LAYOUT: Using simple web-only layout');
+  
+  React.useEffect(() => {
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    document.body.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    document.body.style.backgroundColor = '#ffffff';
+    document.body.style.color = '#000000';
+  }, []);
+
+  return (
+    <Stack>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
-  console.log('🏠 RootLayout: Rendering v3...');
+  console.log('🏠 RootLayout: Rendering - Platform:', Platform.OS);
+
+  // For web, use simple layout without providers
+  if (Platform.OS === 'web') {
+    console.log('🌐 LAYOUT: Using web-specific layout!');
+    return <WebRootLayout />;
+  }
+
+  // For mobile, use the full layout with providers
+  console.log('🏠 RootLayout: Rendering mobile v3...');
   usePlatformSpecificSetup();
   const { isDarkColorScheme } = useColorScheme();
 
@@ -45,6 +75,7 @@ export default function RootLayout() {
       <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
         <StatusBar style={isDarkColorScheme ? 'light' : 'dark'} />
         <AuthGuard>
+          <NetworkStatusIndicator showDiagnostics={true} />
           <Stack>
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(protected)" options={{ headerShown: false }} />

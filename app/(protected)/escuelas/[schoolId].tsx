@@ -13,6 +13,7 @@ import { useColorScheme } from '~/src/hooks/ui/useColorScheme';
 import { useSchool } from '~/src/hooks/data/use-school-queries';
 import { useSchoolGrades, useCreateGrade } from '~/src/hooks/data/use-grade-queries';
 import type { GradeWithStats } from '~/src/types/database';
+import { generateId } from '~/src/utils/id-generator';
 
 export default function SchoolDetailScreen() {
   const { schoolId } = useLocalSearchParams<{ schoolId: string }>();
@@ -64,11 +65,16 @@ export default function SchoolDetailScreen() {
 
   const handleCreateGrade = async (gradeData: any) => {
     try {
-      await createGradeMutation.mutateAsync(gradeData);
+      const newGrade = {
+        ...gradeData,
+        id: generateId.grade(),
+      };
+      await createGradeMutation.mutateAsync(newGrade);
       setShowCreateGradeModal(false);
       Alert.alert('Éxito', 'Grado creado correctamente');
     } catch (error) {
       Alert.alert('Error', 'No se pudo crear el grado. Inténtalo de nuevo.');
+      console.error('Error creating grade:', error);
     }
   };
 

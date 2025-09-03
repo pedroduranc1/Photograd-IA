@@ -150,7 +150,7 @@ class DatabaseService {
           updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
           FOREIGN KEY (grade_id) REFERENCES grades(id) ON DELETE CASCADE,
-          UNIQUE(school_id, student_id)
+          UNIQUE(school_id, student_id) ON CONFLICT REPLACE
         )
       `);
 
@@ -644,6 +644,11 @@ class DatabaseService {
   // School Operations
   async createSchool(school: Omit<School, 'createdAt' | 'updatedAt'>): Promise<DatabaseResult<School>> {
     try {
+      // Validate required fields
+      if (!school.id || !school.userId || !school.name || !school.address) {
+        throw new Error('Missing required fields: id, userId, name, and address are required');
+      }
+
       const now = new Date().toISOString();
       
       const result = await this.client.execute({
@@ -1097,6 +1102,30 @@ class DatabaseService {
   // Student Operations
   async createStudent(student: Omit<Student, 'createdAt' | 'updatedAt'>): Promise<DatabaseResult<Student>> {
     try {
+      // Validate required fields
+      if (!student.id || !student.schoolId || !student.gradeId || !student.firstName || !student.lastName || !student.studentId) {
+        throw new Error('Missing required fields: id, schoolId, gradeId, firstName, lastName, and studentId are required');
+      }
+
+      // Validate foreign key references exist
+      const schoolExists = await this.client.execute({
+        sql: 'SELECT id FROM schools WHERE id = ?',
+        args: [student.schoolId],
+      });
+      
+      if (schoolExists.rows.length === 0) {
+        throw new Error(`School with id ${student.schoolId} does not exist`);
+      }
+
+      const gradeExists = await this.client.execute({
+        sql: 'SELECT id FROM grades WHERE id = ?',
+        args: [student.gradeId],
+      });
+      
+      if (gradeExists.rows.length === 0) {
+        throw new Error(`Grade with id ${student.gradeId} does not exist`);
+      }
+
       const now = new Date().toISOString();
       
       const result = await this.client.execute({
@@ -1710,22 +1739,46 @@ class DatabaseService {
 
   // Private method to handle database errors
   private handleDatabaseError(error: any): DatabaseError {
+    console.error('Database error occurred:', error);
+    
     if (error?.message) {
       // Check for network-related errors
       if (error.message.includes('Network request failed') || 
-          error.message.includes('fetch')) {
+          error.message.includes('fetch') ||
+          error.message.includes('Failed to fetch')) {
         return {
-          message: 'Network error: Unable to connect to database. Please check your internet connection.',
+          message: 'Error de conexión: No se pudo conectar a la base de datos. Verifica tu conexión a internet.',
           code: 'NETWORK_ERROR',
           details: error,
         };
       }
       
       // Check for authentication errors
-      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+      if (error.message.includes('401') || 
+          error.message.includes('Unauthorized') ||
+          error.message.includes('Authentication')) {
         return {
-          message: 'Authentication error: Invalid database credentials.',
+          message: 'Error de autenticación: Credenciales de base de datos inválidas.',
           code: 'AUTH_ERROR',
+          details: error,
+        };
+      }
+      
+      // Check for constraint violations (duplicate entries, etc.)
+      if (error.message.includes('UNIQUE constraint failed') ||
+          error.message.includes('duplicate')) {
+        return {
+          message: 'Error de datos duplicados: Ya existe un registro con esta información.',
+          code: 'DUPLICATE_ERROR',
+          details: error,
+        };
+      }
+      
+      // Check for foreign key constraint errors
+      if (error.message.includes('FOREIGN KEY constraint failed')) {
+        return {
+          message: 'Error de referencia: El registro referenciado no existe.',
+          code: 'REFERENCE_ERROR',
           details: error,
         };
       }
@@ -1733,21 +1786,31 @@ class DatabaseService {
       // Check for Turso-specific errors
       if (error.message.includes('Turso HTTP API error')) {
         return {
-          message: error.message,
+          message: `Error de base de datos: ${error.message}`,
           code: 'TURSO_API_ERROR',
           details: error,
         };
       }
       
+      // Check for timeout errors
+      if (error.message.includes('timeout') ||
+          error.message.includes('ECONNRESET')) {
+        return {
+          message: 'Error de tiempo de espera: La operación tardó demasiado en completarse.',
+          code: 'TIMEOUT_ERROR',
+          details: error,
+        };
+      }
+      
       return {
-        message: error.message,
+        message: `Error de base de datos: ${error.message}`,
         code: error.code || 'DATABASE_ERROR',
         details: error,
       };
     }
     
     return {
-      message: 'An unexpected database error occurred',
+      message: 'Ha ocurrido un error inesperado en la base de datos',
       code: 'UNKNOWN_ERROR',
       details: error,
     };
